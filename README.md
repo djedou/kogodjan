@@ -1,2 +1,2 @@
-# rust_deep_learning
+# kogodjan
 A Deep Learning Library in Rust
