@@ -1,3 +1,1 @@
-mod perceptron;
-
-pub use perceptron::{*};
+pub mod perceptron;
