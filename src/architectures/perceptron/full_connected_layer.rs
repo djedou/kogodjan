@@ -3,6 +3,7 @@ use ndarray_rand::RandomExt;
 use ndarray_rand::rand_distr::Uniform;
 use crate::neural_traits::LayerT;
 
+
 #[derive(Debug, Clone)]
 pub struct FullConnectedLayer<F> {
     weights: ArrayD<f64>,
@@ -25,18 +26,6 @@ impl<F> FullConnectedLayer<F> {
             activator: None
         }
     }
-
-    fn forward(&mut self, inputs: ArrayD<f64>) {
-        println!("{:?}", inputs.view());
-        //self.outputs = Some(inputs.dot(&self.weights) + &self.biases)
-
-        //let activator_input = inputs.dot(&self.weights) + &self.biases;
-
-    }
-
-    fn backward(&mut self) {
-
-    }
 }
 
 impl<F> LayerT for FullConnectedLayer<F> {
@@ -44,6 +33,8 @@ impl<F> LayerT for FullConnectedLayer<F> {
     type Weights = ArrayD<f64>;
     type Biases = ArrayD<f64>;
     type Outputs = ArrayD<f64>;
+    type Inputs = ArrayD<f64>;
+
  
     fn get_weights(&self) -> Self::Weights {
         self.weights.clone()
@@ -57,8 +48,25 @@ impl<F> LayerT for FullConnectedLayer<F> {
         self.outputs.clone()
     }
 
-}
+    fn forward(&mut self, inputs: Self::Inputs) -> Self::Inputs {
+        //println!("{:?}", inputs.view());
+        self.outputs = None;
+        //let w = self.weights;
+        //self.outputs = Some(inputs.dot(&self.weights) + &self.biases);
 
+        //let activator_input = inputs.dot(&self.weights) + &self.biases;
+
+        /*let output = Array::from_shape_fn(IxDyn(&[2, 1]), |_args| {
+            0 as f64
+        });*/
+
+        inputs
+    }
+
+    fn backward(&mut self, inputs: Self::Inputs) {
+        println!("{:?}", inputs.view());
+    }
+}
 
 #[cfg(test)]
 mod full_connected_layer_test {

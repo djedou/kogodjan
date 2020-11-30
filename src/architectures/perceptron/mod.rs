@@ -1,3 +1,3 @@
-mod layer;
+mod full_connected_layer;
 
-pub use layer::*;
+pub use full_connected_layer::*;

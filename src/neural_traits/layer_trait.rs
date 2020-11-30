@@ -1,10 +1,11 @@
-
+use std::fmt::Debug;
 
 pub trait LayerT {
 
+    type Inputs: Clone + Debug;
     type Weights;
     type Biases;
-    type Outputs;
+    type Outputs: Debug;
     /// get the weights of the neurons in the layer
     /// 
     /// # Example
@@ -27,4 +28,9 @@ pub trait LayerT {
 
     /// get the output of the neurons in the layer
     fn get_outputs(&self) -> Option<Self::Outputs>;
+
+    fn forward(&mut self, inputs: Self::Inputs) -> Self::Inputs;
+
+    fn backward(&mut self, inputs: Self::Inputs);
+
 }
