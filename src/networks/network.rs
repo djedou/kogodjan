@@ -49,17 +49,17 @@ where L: LayerT + Clone
 {
     network_inputs: Vec<ArrayD<f64>>,
     network_layers: Vec<L>,
-    network_outputs: Vec<ArrayD<f64>>,
+    network_targets: Vec<ArrayD<f64>>,
 }
 
 impl<L> Network<L>
 where L: LayerT + Clone
 {
-    pub fn new(network_inputs: Vec<ArrayD<f64>>, network_layers: Vec<L>, network_outputs: Vec<ArrayD<f64>>) -> Network<L> {
+    pub fn new(network_inputs: Vec<ArrayD<f64>>, network_layers: Vec<L>, network_targets: Vec<ArrayD<f64>>) -> Network<L> {
         Network {
             network_inputs,
             network_layers,
-            network_outputs
+            network_targets
         }
     }
 }
@@ -69,11 +69,11 @@ where L: LayerT + Clone
 {
     fn train(&mut self) {
 
-        let should_learn = |output: ArrayD<f64>, target: ArrayD<f64>| -> bool {
+        let should_learn = |output: ArrayD<f64>, target: &ArrayD<f64>| -> bool {
 
             match output.shape() == target.shape() {
                 true => {
-                    !(output == target)
+                    !(output == *target)
                 },
                 false => {
                     panic!("the target and output should have same shape")
@@ -86,22 +86,22 @@ where L: LayerT + Clone
         let layers_size = self.network_layers.len();
 
         for ind in 0..inputs_size {
-            let input = self.network_inputs[ind].clone();
-            let output = self.network_outputs[ind].clone();
+            let input = &self.network_inputs[ind];
+            let target = &self.network_targets[ind];
 
             'one_tour_loop: loop {
                 // forward is implemented here
                 let mut inp = input.clone();
                 // go through all layers for one network input by a time
                 for index in 0..layers_size {
-                    let mut layer = self.network_layers[index].clone();
+                    let layer = &self.network_layers[index];
                     inp = layer.forward(inp);
                             
                 }
     
-                println!("output: {:?}", inp.clone());
+                println!("output: {:?}", inp);
                 println!(" ");
-                let should_learn = should_learn(inp, output.clone()); 
+                let should_learn = should_learn(inp, &target); 
                 match should_learn {
                     true => {
                         // backward is implemented here base on "inp"
@@ -118,4 +118,3 @@ where L: LayerT + Clone
         
     }
 }
-

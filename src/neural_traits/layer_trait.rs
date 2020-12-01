@@ -23,10 +23,7 @@ pub trait LayerT {
     /// get the biases of the neurons in the layer
     fn get_biases(&self) -> ArrayD<f64>;
 
-    /// get the output of the neurons in the layer
-    fn get_outputs(&self) -> Option<ArrayD<f64>>;
-
-    fn forward(&mut self, inputs: ArrayD<f64>) -> ArrayD<f64>;
+    fn forward(&self, inputs: ArrayD<f64>) -> ArrayD<f64>;
 
     fn backward(&mut self, inputs: ArrayD<f64>);
 

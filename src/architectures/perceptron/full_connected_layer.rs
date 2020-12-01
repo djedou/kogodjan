@@ -9,7 +9,6 @@ use crate::activations::{Activator};
 pub struct FullConnectedLayer {
     weights: ArrayD<f64>,
     biases: ArrayD<f64>,
-    outputs: Option<ArrayD<f64>>,
     activator: Activator
 }
 
@@ -23,7 +22,6 @@ impl FullConnectedLayer {
         FullConnectedLayer {
             weights,
             biases,
-            outputs: None,
             activator: f
         }
     }
@@ -39,11 +37,7 @@ impl LayerT for FullConnectedLayer {
         self.biases.clone()
     }
 
-    fn get_outputs(&self) -> Option<ArrayD<f64>> {
-        self.outputs.clone()
-    }
-
-    fn forward(&mut self, inputs: ArrayD<f64>) -> ArrayD<f64> {
+    fn forward(&self, inputs: ArrayD<f64>) -> ArrayD<f64> {
 
         let mut net_input_vec = Vec::new();
 
