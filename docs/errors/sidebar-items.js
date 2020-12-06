@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["last_layer_gradient",""],["others_layers_gradient",""],["single_neuron_error_func","each neuron in the output layer learns its own error"]],"type":[["Gradient",""],["NetworkErrorFunction",""]]});
