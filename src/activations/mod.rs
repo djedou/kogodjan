@@ -7,6 +7,7 @@ mod logsig;
 mod tansig;
 mod poslin;
 mod types;
+mod constants;
 
 
 pub use hardlim::*;
@@ -18,3 +19,4 @@ pub use logsig::*;
 pub use tansig::*;
 pub use poslin::*;
 pub use types::*;
+pub use constants::*;

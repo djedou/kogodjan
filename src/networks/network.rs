@@ -1,6 +1,8 @@
 use crate::neural_traits::LayerT;
 use crate::neural_traits::NetworkT;
-use ndarray::ArrayD;
+use ndarray::{ArrayD};
+use crate::errors::{last_layer_gradient, others_layers_gradient};
+use crate::errors::NetworkErrorFunction;
 
 
 /// build a neural network 
@@ -67,47 +69,52 @@ where L: LayerT + Clone
 impl<L> NetworkT for Network<L> 
 where L: LayerT + Clone
 {
-    fn train(&mut self) {
+    fn train(&mut self, rate: f64, error_func: NetworkErrorFunction) {
 
-        let should_learn = |output: ArrayD<f64>, target: &ArrayD<f64>| -> bool {
-
-            match output.shape() == target.shape() {
-                true => {
-                    !(output == *target)
-                },
-                false => {
-                    panic!("the target and output should have same shape")
-                }
-            }
-        };
+        let error: fn(target: &ArrayD<f64>, output: ArrayD<f64>) -> (bool, ArrayD<f64>) = error_func;
 
         let inputs_size = self.network_inputs.len();
 
         let layers_size = self.network_layers.len();
 
         for ind in 0..inputs_size {
+            //println!("tours: {}", ind);
             let input = &self.network_inputs[ind];
             let target = &self.network_targets[ind];
 
             'one_tour_loop: loop {
                 // forward is implemented here
                 let mut inp = input.clone();
+                //println!("inputs: {:?}", inp);
+                //println!("targets: {:?}", target);
                 // go through all layers for one network input by a time
                 for index in 0..layers_size {
-                    let layer = &self.network_layers[index];
-                    inp = layer.forward(inp);
-                            
+                    let layer = &mut self.network_layers[index];
+                    inp = layer.forward(inp);   
                 }
-    
-                println!("output: {:?}", inp);
-                println!(" ");
-                let should_learn = should_learn(inp, &target); 
+                println!("network output: {:?}", inp);
+                println!("target: {:?}", target);
+                let (should_learn, error_deriv )= error(target,inp); 
+                println!("network error deriv: {:?}", error_deriv);
                 match should_learn {
                     true => {
                         // backward is implemented here base on "inp"
-                        break;
+                        let mut error_der_inp = error_deriv.clone();
+                        
+                        for i in 0..layers_size {
+                            let index = (layers_size -1) - i;
+                            if index == layers_size - 1 {
+                                let layer = &mut self.network_layers[index];
+                                error_der_inp = layer.backward(error_der_inp, rate, last_layer_gradient);
+                            } else {
+                                let layer = &mut self.network_layers[index];
+                                error_der_inp = layer.backward(error_der_inp, rate, others_layers_gradient);
+                            }
+                        }
+                        //break;
                     },
                     false => {
+                        println!("djed");
                         break 'one_tour_loop;
                     }
                 }

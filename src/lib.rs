@@ -6,3 +6,4 @@ pub mod architectures;
 pub mod neural_traits;
 pub mod networks;
 pub mod activations;
+pub mod errors;
