@@ -1,9 +1,13 @@
-pub extern crate ndarray;
-pub extern crate ndarray_rand;
+pub extern crate nalgebra;
+pub extern crate rand;
 
 
-pub mod architectures;
+pub mod layers;
 pub mod neural_traits;
-pub mod networks;
-pub mod activations;
-pub mod errors;
+pub mod network_arch;
+pub mod activators;
+pub mod loss_functions;
+pub mod maths;
+pub mod optimizers;
+//pub(crate) mod utils;
+pub mod utils;

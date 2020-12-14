@@ -1,4 +1,4 @@
-use crate::neural_traits::LayerT;
+/*use crate::neural_traits::LayerT;
 use crate::neural_traits::NetworkT;
 use ndarray::{ArrayD};
 use crate::errors::{last_layer_gradient, others_layers_gradient};
@@ -14,10 +14,11 @@ use crate::errors::NetworkErrorFunction;
 /// use kongodjan::ndarray::{Array, IxDyn};
 /// use kongodjan::networks::Network;
 /// use kongodjan::neural_traits::NetworkT;
-/// use kongodjan::activations::tansig;
+/// use kongodjan::activations::{tansig, tansig_deriv};
+/// use kongodjan::errors::single_neuron_error_func;
 ///
-/// let layer1 = FullConnectedLayer::new(2, 3, tansig);
-/// let layer2 = FullConnectedLayer::new(3, 2, tansig);
+/// let layer1 = FullConnectedLayer::new(2, 3, tansig, tansig_deriv);
+/// let layer2 = FullConnectedLayer::new(3, 2, tansig, tansig_deriv);
 /// 
 /// let layers = vec![layer1, layer2];
 ///
@@ -41,7 +42,7 @@ use crate::errors::NetworkErrorFunction;
 ///
 /// let mut network = Network::new(inputs, layers, outputs);
 ///
-///  network.train();
+///  network.train(0.3, single_neuron_error_func);
 /// ```
 ///
 
@@ -111,7 +112,7 @@ where L: LayerT + Clone
                                 error_der_inp = layer.backward(error_der_inp, rate, others_layers_gradient);
                             }
                         }
-                        //break;
+                        break;
                     },
                     false => {
                         println!("djed");
@@ -125,3 +126,4 @@ where L: LayerT + Clone
         
     }
 }
+*/

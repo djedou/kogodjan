@@ -1,4 +1,4 @@
-use ndarray::{ArrayD, IxDyn, Array};
+/*use ndarray::{ArrayD, IxDyn, Array};
 use ndarray_rand::rand::{thread_rng, Rng};
 use crate::neural_traits::LayerT;
 use crate::activations::{Activator, ActivatorDeriv, FLOAT_SIZE_10000};
@@ -230,3 +230,4 @@ mod full_connected_layer_test {
         assert_eq!(weights.shape(),  &[4,2]);
     }
 }
+*/
