@@ -1,10 +1,9 @@
 use crate::maths::types::MatrixD;
 use rand::{thread_rng, Rng};
 use crate::neural_traits::LayerT;
-use crate::activators::{Activator, ActivatorDeriv};
+use crate::activators::types::{Activator, ActivatorDeriv};
 use crate::optimizers::Optimizer;
 use nalgebra::DVector;
-//use crate::errors::Gradient;
 
 
 /// Linear Regression Layer
@@ -56,6 +55,7 @@ impl LayerT for FcLayer {
 
     fn forward(&mut self, inputs: &MatrixD<f64>) -> MatrixD<f64> {
         let activ_func: fn(MatrixD<f64>) -> MatrixD<f64> = self.activator;
+        
         // calculate net_inputs
         let (wr, _wc) = self.weights.shape();
         let (_ir, ic) = inputs.shape();
@@ -71,19 +71,46 @@ impl LayerT for FcLayer {
             net.set_column(m, &col_value);
             
         });
+        self.inputs = Some(inputs.clone());
         self.net_inputs = Some(net.clone());
         activ_func(net)
         
     }
 
-    fn backward(&mut self, _lr: &f64, _batch_size: &usize, gradient: &MatrixD<f64>, _optimizer: &Optimizer) -> MatrixD<f64> {
-        let grad = gradient.clone();
-        /*let opt_func: fn(lr: &f64, batch_size: &usize, gradient: &MatrixD<f64>, param: &MatrixD<f64>) -> MatrixD<f64> = *optimizer;
+    fn backward(&mut self, lr: &f64, batch_size: &usize, gradient: &MatrixD<f64>, optimizer: &Optimizer) -> MatrixD<f64> {
+
+        let old_weights = self.weights.clone().transpose();
+        // get the deriv function 
+        let deriv: fn(MatrixD<f64>) -> MatrixD<f64> = if let Some(d) = self.activator_deriv {
+            d
+        } else {
+            panic!("please provide derivative for all activators");
+        };
+         
+        // first calculate the net_input gradient
+        let mut layer_grad = if let Some(ref net) = self.net_inputs {
+            deriv(net.clone())
+        } else {
+            panic!("this layer can not be used");
+        };
+
+        // calulate the layer gradient
+        layer_grad.zip_apply(&gradient, |n,g| n * g);
+
+        let opt_func: fn(lr: &f64, batch_size: &usize, gradient: &MatrixD<f64>, param: &MatrixD<f64>, input: Option<&MatrixD<f64>>) -> MatrixD<f64> = *optimizer;
         
-        self.weights = opt_func(&lr, &batch_size, &gradient, &self.weights);
-        self.biases = opt_func(&lr, &batch_size, &gradient, &self.biases);
-        */
-        grad
+        let input = if let Some(ref inp) = self.inputs {
+            inp
+        } else {
+            panic!("this layer does not have input");
+        };
+
+        self.weights = opt_func(&lr, &batch_size, &layer_grad, &self.weights, Some(&input));
+        self.biases = opt_func(&lr, &batch_size, &layer_grad, &self.biases, None);
+
+        let mut return_grad = MatrixD::<f64>::zeros(old_weights.nrows(), layer_grad.ncols());
+        old_weights.mul_to(&layer_grad, &mut return_grad);
+        return_grad
  
     }
 

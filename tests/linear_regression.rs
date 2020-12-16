@@ -3,7 +3,7 @@ use kongodjan::{
     maths::types::MatrixD,
     utils::{synthetic_data},
     layers::single_layer::LrLayer,
-    activators::purelin,
+    activators::linear::purelin,
     network_arch::LinearNetwork,
     loss_functions::{squared_loss, squared_loss_gradient},
     neural_traits::NetworkT,
@@ -34,7 +34,7 @@ fn linear_regression() {
     let mut network = LinearNetwork::new(features, layer, labels);
 
     // train the networ
-    network.train(0.01, Some(5), (squared_loss, squared_loss_gradient,sgd), 200);
+    network.train(0.01, Some(5), (squared_loss, squared_loss_gradient,sgd), 20);
 
     //let pred = network.predict(&test_x);
     //println!("output: {:?}", pred);

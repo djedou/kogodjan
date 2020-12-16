@@ -9,7 +9,6 @@ use crate::{
 
 
 
-
 /// build a neural network with one layer and one neuron
 /// # Example  
 ///
@@ -18,7 +17,7 @@ use crate::{
 ///    maths::types::MatrixD,
 ///    utils::{synthetic_data},
 ///    layers::single_layer::LrLayer,
-///    activators::purelin,
+///    activators::linear::purelin,
 ///    network_arch::LinearNetwork,
 ///    loss_functions::{squared_loss, squared_loss_gradient},
 ///    neural_traits::NetworkT,
@@ -50,6 +49,7 @@ use crate::{
 /// //let pred = network.predict(&test_x);
 /// //println!("output: {:?}", pred);
 /// ```
+
 #[derive(Debug, Clone)]
 pub struct LinearNetwork<L>
 where L: LayerT + Clone
@@ -78,12 +78,11 @@ where L: LayerT + Clone
     fn train(&mut self, lr: f64, batch_size: Option<usize>, optimizers: (LossFunction, GradFunction, Optimizer), epoch: i32) {
         let loss_f: fn(output: &MatrixD<f64>, target: &MatrixD<f64>) -> MatrixD<f64> = optimizers.0;
         let grad_f: fn(errors: MatrixD<f64>) -> MatrixD<f64> = optimizers.1;
-
         let bat_size = match batch_size {
             Some(size) => size,
             None => 1
         };
-
+        
         for round in 1..epoch {
             for (feature, label) in data_iter(bat_size, &self.network_inputs, &self.network_outputs){
                 let forword_output = self.network_layers.forward(&feature);

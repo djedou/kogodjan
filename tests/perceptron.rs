@@ -3,7 +3,7 @@ use kongodjan::{
     maths::types::MatrixD,
     utils::{synthetic_data_mat},
     layers::multi_layers::FcLayer,
-    activators::logsig,
+    activators::non_linear::{logsig, logsig_deriv},
     network_arch::PerceptronNetwork,
     loss_functions::{squared_loss, squared_loss_gradient},
     neural_traits::NetworkT,
@@ -36,8 +36,8 @@ fn linear_regression() {
     // build layer
     let n_inputs = 7; 
     let n_neurons = 4;
-    let layer1 = FcLayer::new(n_inputs, n_neurons, logsig, None);
-    let layer2 = FcLayer::new(4, 3, logsig, None);
+    let layer1 = FcLayer::new(n_inputs, n_neurons, logsig, Some(logsig_deriv));
+    let layer2 = FcLayer::new(4, 3, logsig, Some(logsig_deriv));
 
     let layers = vec![layer1, layer2];
 
@@ -46,4 +46,7 @@ fn linear_regression() {
 
     // train the networ
     network.train(0.03, Some(10), (squared_loss, squared_loss_gradient,sgd), 20);
+
+    //let pred = network.predict(&test_x);
+    //println!("output: {:?}", pred);
 }

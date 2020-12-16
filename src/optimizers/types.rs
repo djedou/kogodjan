@@ -1,3 +1,3 @@
-use crate::maths::types::MatrixD;
+use crate::maths::types::{MatrixD};
 
-pub type Optimizer = fn(lr: &f64, batch_size: &usize, gradient: &MatrixD<f64>, param: &MatrixD<f64>) -> MatrixD<f64>;
+pub type Optimizer = fn(lr: &f64, batch_size: &usize, gradient: &MatrixD<f64>, param: &MatrixD<f64>, input: Option<&MatrixD<f64>>) -> MatrixD<f64>;

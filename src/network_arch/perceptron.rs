@@ -10,7 +10,57 @@ use crate::{
 
 
 
-/// build a neural network with more layers and more neurons 
+/// build a neural network with more layers, more neurons and fully connected  
+/// # Example
+/// ```
+/// use kongodjan::{
+///     maths::types::MatrixD,
+///     utils::{synthetic_data_mat},
+///     layers::multi_layers::FcLayer,
+///     activators::non_linear::{logsig, logsig_deriv},
+///     network_arch::PerceptronNetwork,
+///     loss_functions::{squared_loss, squared_loss_gradient},
+///     neural_traits::NetworkT,
+///     optimizers::sgd
+/// };
+///
+/// // rows are neurons and columns are inputs
+/// // 7 inputs for 3 neurons
+/// let true_w = MatrixD::<f64>::from_row_slice(3, 7, &[
+///     2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0,
+///     2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0,
+///     2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0
+/// ]);
+///
+/// let true_b = MatrixD::<f64>::from_row_slice(3, 1, &[
+///     2.0,
+///     -3.4,
+///     1.0
+/// ]);
+///    
+/// // the network is one layer with one neuron which receives two inputs
+/// // then features are two rows(two inputs) and more columns
+/// // labels one row and more columns
+/// let (features, labels) = synthetic_data_mat(&true_w, true_b, 1000);
+///    
+/// // build layer
+/// let (l1_n_inputs, l1_n_neurons) = (7, 4); 
+/// let (l2_n_inputs, l2_n_neurons) = (4, 3);
+/// 
+/// let layer1 = FcLayer::new(l1_n_inputs, l1_n_neurons, logsig, Some(logsig_deriv));
+/// let layer2 = FcLayer::new(l2_n_inputs, l2_n_neurons, logsig, Some(logsig_deriv));
+///
+/// let layers = vec![layer1, layer2];
+///
+/// // build the network
+/// let mut network = PerceptronNetwork::new(features, layers, labels);
+///
+/// // train the networ
+/// network.train(0.03, Some(10), (squared_loss, squared_loss_gradient,sgd), 20);
+///
+/// //let pred = network.predict(&test_x);
+/// //println!("output: {:?}", pred);
+/// ```
 #[derive(Debug, Clone)]
 pub struct PerceptronNetwork<L>
 where L: LayerT + Clone
@@ -36,44 +86,67 @@ where L: LayerT + Clone
 impl<L> NetworkT for PerceptronNetwork<L> 
 where L: LayerT + Clone
 {
-    fn train(&mut self, _lr: f64, batch_size: Option<usize>, optimizers: (LossFunction, GradFunction, Optimizer), epoch: i32) {
+    fn train(&mut self, lr: f64, batch_size: Option<usize>, optimizers: (LossFunction, GradFunction, Optimizer), epoch: i32) {
         let loss_f: fn(output: &MatrixD<f64>, target: &MatrixD<f64>) -> MatrixD<f64> = optimizers.0;
-        let grad_f: fn(errors: MatrixD<f64>) -> MatrixD<f64> = optimizers.1;
+        let loss_grad_f: fn(errors: MatrixD<f64>) -> MatrixD<f64> = optimizers.1;
 
+        // get batch size
         let bat_size = match batch_size {
             Some(size) => size,
             None => 1
         };
 
-        for _round in 1..epoch {
+        for round in 1..epoch {
 
             for (feature, label) in data_iter(bat_size, &self.network_inputs, &self.network_outputs){
                 
                 let mut input = feature.clone();
-
+                
                 // forword into all layers
                 for index in 0..self.network_layers.len() {
                     let layer = &mut self.network_layers[index];
                     input = layer.forward(&input);   
                 }
-                // calculate gradient here
-                let gradient = grad_f(loss_f(&input, &label));
-                println!("gradient: {:?}", gradient);
-                println!("");
-    
-                //let _output = self.network_layers.backward(&lr, &bat_size, &gradient, &optimizers.2 );
-                break;
+                
+                // calculate the last layer gradient here
+                let loss_grad = loss_grad_f(loss_f(&input, &label));
+                let mut extern_gradient = loss_grad.clone();
+                // backword into all layers for the last to the first
+                let mut indexes: Vec<_> = (0..self.network_layers.len()).into_iter().collect();
+                indexes.reverse();
+                let len = indexes.len() - 1;
+                for ind in 0..indexes.len() {
+                    let i = len - ind;
+                    let layer = &mut self.network_layers[i];
+                    
+                    extern_gradient = layer.backward(&lr, &bat_size, &extern_gradient, &optimizers.2);
+                }
+                //break;
             }
             
-            //let forword_output = self.network_layers.forward(&self.network_inputs);
-            // calculate gradient here
-            //let error = loss_f(&forword_output, &self.network_outputs);
-            //println!("epoch: {:?} => loss: {:?}", round, error.mean());
-            //let gradient = grad_f(error);
-            //println!("gradient: {:?}", gradient);
-            //let _output = self.network_layers.backward(&lr, &self.network_inputs.nrows(), &gradient, &optimizers.2 );
-            break;
-
+            let mut input = self.network_inputs.clone();
+                
+            // forword into all layers
+            for index in 0..self.network_layers.len() {
+                let layer = &mut self.network_layers[index];
+                input = layer.forward(&input);   
+            }
+            
+            // calculate the last layer gradient here
+            let error = loss_f(&input, &self.network_outputs);
+            println!("epoch: {:?} => loss: {:?}", round, error.mean());
+            let loss_grad = loss_grad_f(error);
+            let mut extern_gradient = loss_grad.clone();
+            // backword into all layers for the last to the first
+            let mut indexes: Vec<_> = (0..self.network_layers.len()).into_iter().collect();
+            indexes.reverse();
+            let len = indexes.len() - 1;
+            for ind in 0..indexes.len() {
+                let i = len - ind;
+                let layer = &mut self.network_layers[i];
+                
+                extern_gradient = layer.backward(&lr, &bat_size, &extern_gradient, &optimizers.2);
+            }
         }
     }
 

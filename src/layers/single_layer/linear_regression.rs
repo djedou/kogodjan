@@ -1,7 +1,7 @@
 use crate::maths::types::MatrixD;
 use rand::{thread_rng, Rng};
 use crate::neural_traits::LayerT;
-use crate::activators::{Activator, ActivatorDeriv};
+use crate::activators::types::{Activator, ActivatorDeriv};
 use crate::optimizers::Optimizer;
 use nalgebra::DVector;
 //use crate::errors::Gradient;
@@ -70,6 +70,7 @@ impl LayerT for LrLayer {
             net.set_column(m, &col_value);
             
         });
+        self.inputs = Some(inputs.clone());
         self.net_inputs = Some(net.clone());
         activ_func(net)
         
@@ -77,11 +78,17 @@ impl LayerT for LrLayer {
 
     fn backward(&mut self, lr: &f64, batch_size: &usize, gradient: &MatrixD<f64>, optimizer: &Optimizer) -> MatrixD<f64> {
         let grad = gradient.clone();
-        let opt_func: fn(lr: &f64, batch_size: &usize, gradient: &MatrixD<f64>, param: &MatrixD<f64>) -> MatrixD<f64> = *optimizer;
-        
-        self.weights = opt_func(&lr, &batch_size, &gradient, &self.weights);
-        self.biases = opt_func(&lr, &batch_size, &gradient, &self.biases);
-        
+        let opt_func: fn(lr: &f64, batch_size: &usize, gradient: &MatrixD<f64>, param: &MatrixD<f64>, input: Option<&MatrixD<f64>>) -> MatrixD<f64> = *optimizer;
+
+        let input = if let Some(ref inp) = self.inputs {
+            inp
+        } else {
+            panic!("this layer does not have input");
+        };
+
+        self.weights = opt_func(&lr, &batch_size, &gradient, &self.weights, Some(&input));
+        self.biases = opt_func(&lr, &batch_size, &gradient, &self.biases, None);
+
         grad
  
     }
