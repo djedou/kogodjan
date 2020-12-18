@@ -44,11 +44,11 @@ use crate::{
 /// let (features, labels) = synthetic_data_mat(&true_w, true_b, 1000);
 ///    
 /// // build layer
-/// let (l1_n_inputs, l1_n_neurons) = (7, 4); 
-/// let (l2_n_inputs, l2_n_neurons) = (4, 3);
+/// let (l1_n_neurons, l1_n_inputs) = (4, 7); 
+/// let (l2_n_neurons, l2_n_inputs) = (3, 4);
 /// 
-/// let layer1 = FcLayer::new(l1_n_inputs, l1_n_neurons, logsig, Some(logsig_deriv));
-/// let layer2 = FcLayer::new(l2_n_inputs, l2_n_neurons, logsig, Some(logsig_deriv));
+/// let layer1 = FcLayer::new(l1_n_neurons, l1_n_inputs, logsig, Some(logsig_deriv));
+/// let layer2 = FcLayer::new(l2_n_neurons, l2_n_inputs, logsig, Some(logsig_deriv));
 ///
 /// let layers = vec![layer1, layer2];
 ///

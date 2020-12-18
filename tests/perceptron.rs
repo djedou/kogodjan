@@ -3,7 +3,7 @@ use kongodjan::{
     maths::types::MatrixD,
     utils::{synthetic_data_mat},
     layers::multi_layers::FcLayer,
-    activators::non_linear::{logsig, logsig_deriv},
+    activators::non_linear::{logsig, logsig_deriv/*, tansig, tansig_deriv*/},
     network_arch::PerceptronNetwork,
     loss_functions::{squared_loss, squared_loss_gradient},
     neural_traits::NetworkT,
@@ -34,10 +34,10 @@ fn linear_regression() {
     let (features, labels) = synthetic_data_mat(&true_w, true_b, 1000);
     
     // build layer
-    let n_inputs = 7; 
     let n_neurons = 4;
-    let layer1 = FcLayer::new(n_inputs, n_neurons, logsig, Some(logsig_deriv));
-    let layer2 = FcLayer::new(4, 3, logsig, Some(logsig_deriv));
+    let n_inputs = 7; 
+    let layer1 = FcLayer::new(n_neurons, n_inputs, logsig, Some(logsig_deriv));
+    let layer2 = FcLayer::new(3, 4, logsig, Some(logsig_deriv));
 
     let layers = vec![layer1, layer2];
 
@@ -45,7 +45,7 @@ fn linear_regression() {
     let mut network = PerceptronNetwork::new(features, layers, labels);
 
     // train the networ
-    network.train(0.03, Some(10), (squared_loss, squared_loss_gradient,sgd), 20);
+    network.train(0.1, Some(3), (squared_loss, squared_loss_gradient,sgd), 10);
 
     //let pred = network.predict(&test_x);
     //println!("output: {:?}", pred);

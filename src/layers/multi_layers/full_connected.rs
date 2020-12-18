@@ -21,7 +21,7 @@ impl FcLayer {
     /// create a new Linear Regression Layer  
     /// n_inputs(neuron input) is the number of input for the single neuron in the layer 
     /// n_neurons is the number of neurons for the layer    
-    pub fn new(n_inputs: usize, n_neurons: usize, activator: Activator, activator_deriv: Option<ActivatorDeriv>) -> Self {
+    pub fn new(n_neurons: usize, n_inputs: usize, activator: Activator, activator_deriv: Option<ActivatorDeriv>) -> Self {
         let mut rng = thread_rng(); 
 
         // rows are for neurons and columns are for inputs per neuron
