@@ -1,6 +1,7 @@
 pub extern crate nalgebra;
 pub extern crate rand;
-
+#[macro_use]
+extern crate serde_derive;
 
 pub mod layers;
 pub mod neural_traits;

@@ -16,13 +16,13 @@ fn linear_regression() {
 
     // rows are neurons and columns are inputs
     // 7 inputs for 3 neurons
-    let true_w = MatrixD::<f64>::from_row_slice(3, 7, &[
+    let true_w = MatrixD::<f32>::from_row_slice(3, 7, &[
         2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0,
         2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0,
         2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0
     ]);
 
-    let true_b = MatrixD::<f64>::from_row_slice(3, 1, &[
+    let true_b = MatrixD::<f32>::from_row_slice(3, 1, &[
         2.0,
         -3.4,
         1.0
@@ -36,8 +36,8 @@ fn linear_regression() {
     // build layer
     let n_neurons = 4;
     let n_inputs = 7; 
-    let layer1 = FcLayer::new(n_neurons, n_inputs, logsig, Some(logsig_deriv));
-    let layer2 = FcLayer::new(3, 4, logsig, Some(logsig_deriv));
+    let layer1 = FcLayer::new(n_neurons, n_inputs, logsig, Some(logsig_deriv), 1);
+    let layer2 = FcLayer::new(3, 4, logsig, Some(logsig_deriv), 2);
 
     let layers = vec![layer1, layer2];
 

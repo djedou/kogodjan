@@ -15,7 +15,7 @@ use kongodjan::{
 fn linear_regression() {
 
     // rows are neurons and columns are inputs
-    let true_w = MatrixD::<f64>::from_row_slice(1, 2, &[
+    let true_w = MatrixD::<f32>::from_row_slice(1, 2, &[
         2.0, -3.4
     ]);
 
@@ -28,7 +28,7 @@ fn linear_regression() {
 
     // build layer
     let size_of_input_vec = 2; 
-    let layer = LrLayer::new(size_of_input_vec, purelin, None);
+    let layer = LrLayer::new(size_of_input_vec, purelin, None, 1);
     
     // build the network
     let mut network = LinearNetwork::new(features, layer, labels);

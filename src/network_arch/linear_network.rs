@@ -25,7 +25,7 @@ use crate::{
 /// };
 ///
 /// // rows are neurons and columns are inputs
-/// let true_w = MatrixD::<f64>::from_row_slice(1, 2, &[
+/// let true_w = MatrixD::<f32>::from_row_slice(1, 2, &[
 ///    2.0, -3.4
 /// ]);
 ///
@@ -38,7 +38,7 @@ use crate::{
 ///
 /// // build layer
 /// let size_of_input_vec = 2; 
-/// let layer = LrLayer::new(size_of_input_vec, purelin, None);
+/// let layer = LrLayer::new(size_of_input_vec, purelin, None, 1);
 ///
 /// // build the network
 /// let mut network = LinearNetwork::new(features, layer, labels);
@@ -54,15 +54,15 @@ use crate::{
 pub struct LinearNetwork<L>
 where L: LayerT + Clone
 {
-    network_inputs: MatrixD<f64>,
+    network_inputs: MatrixD<f32>,
     network_layers: L,
-    network_outputs: MatrixD<f64>
+    network_outputs: MatrixD<f32>
 }
 
 impl<L> LinearNetwork<L>
 where L: LayerT + Clone
 {
-    pub fn new( network_inputs: MatrixD<f64>, network_layers: L, network_outputs: MatrixD<f64>) -> LinearNetwork<L> {
+    pub fn new( network_inputs: MatrixD<f32>, network_layers: L, network_outputs: MatrixD<f32>) -> LinearNetwork<L> {
         
         LinearNetwork {
             network_inputs,
@@ -75,9 +75,9 @@ where L: LayerT + Clone
 impl<L> NetworkT for LinearNetwork<L> 
 where L: LayerT + Clone
 {
-    fn train(&mut self, lr: f64, batch_size: Option<usize>, optimizers: (LossFunction, GradFunction, Optimizer), epoch: i32) {
-        let loss_f: fn(output: &MatrixD<f64>, target: &MatrixD<f64>) -> MatrixD<f64> = optimizers.0;
-        let grad_f: fn(errors: MatrixD<f64>) -> MatrixD<f64> = optimizers.1;
+    fn train(&mut self, lr: f32, batch_size: Option<usize>, optimizers: (LossFunction, GradFunction, Optimizer), epoch: i32) {
+        let loss_f: fn(output: &MatrixD<f32>, target: &MatrixD<f32>) -> MatrixD<f32> = optimizers.0;
+        let grad_f: fn(errors: MatrixD<f32>) -> MatrixD<f32> = optimizers.1;
         let bat_size = match batch_size {
             Some(size) => size,
             None => 1
@@ -100,7 +100,7 @@ where L: LayerT + Clone
         }
     }
 
-    fn predict(&mut self, input: &MatrixD<f64>) -> MatrixD<f64> {
+    fn predict(&mut self, input: &MatrixD<f32>) -> MatrixD<f32> {
         self.network_layers.forward(&input)
     }
 }

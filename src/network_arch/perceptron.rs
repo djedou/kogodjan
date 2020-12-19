@@ -2,11 +2,11 @@ use crate::{
     neural_traits::{LayerT, NetworkT},
     loss_functions::{LossFunction, GradFunction},
     maths::types::MatrixD,
-    utils::{data_iter},
+    utils::{data_iter, Parameters},
     optimizers::Optimizer
 };
-
-
+use serde_json::{to_writer, from_reader};
+use std::{io::BufReader, fs::File};
 
 
 
@@ -26,13 +26,13 @@ use crate::{
 ///
 /// // rows are neurons and columns are inputs
 /// // 7 inputs for 3 neurons
-/// let true_w = MatrixD::<f64>::from_row_slice(3, 7, &[
+/// let true_w = MatrixD::<f32>::from_row_slice(3, 7, &[
 ///     2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0,
 ///     2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0,
 ///     2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0
 /// ]);
 ///
-/// let true_b = MatrixD::<f64>::from_row_slice(3, 1, &[
+/// let true_b = MatrixD::<f32>::from_row_slice(3, 1, &[
 ///     2.0,
 ///     -3.4,
 ///     1.0
@@ -47,8 +47,8 @@ use crate::{
 /// let (l1_n_neurons, l1_n_inputs) = (4, 7); 
 /// let (l2_n_neurons, l2_n_inputs) = (3, 4);
 /// 
-/// let layer1 = FcLayer::new(l1_n_neurons, l1_n_inputs, logsig, Some(logsig_deriv));
-/// let layer2 = FcLayer::new(l2_n_neurons, l2_n_inputs, logsig, Some(logsig_deriv));
+/// let layer1 = FcLayer::new(l1_n_neurons, l1_n_inputs, logsig, Some(logsig_deriv), 1);
+/// let layer2 = FcLayer::new(l2_n_neurons, l2_n_inputs, logsig, Some(logsig_deriv), 2);
 ///
 /// let layers = vec![layer1, layer2];
 ///
@@ -65,20 +65,61 @@ use crate::{
 pub struct PerceptronNetwork<L>
 where L: LayerT + Clone
 {
-    network_inputs: MatrixD<f64>,
+    network_db_id: String,
+    network_inputs: MatrixD<f32>,
     network_layers: Vec<L>,
-    network_outputs: MatrixD<f64>
+    network_outputs: MatrixD<f32>
 }
 
 impl<L> PerceptronNetwork<L>
 where L: LayerT + Clone
 {
-    pub fn new(network_inputs: MatrixD<f64>, network_layers: Vec<L>, network_outputs: MatrixD<f64>) -> PerceptronNetwork<L> {
+    pub fn new(network_inputs: MatrixD<f32>, network_layers: Vec<L>, network_outputs: MatrixD<f32>) -> PerceptronNetwork<L> {
         
         PerceptronNetwork {
+            network_db_id: String::new(),
             network_inputs,
             network_layers,
             network_outputs
+        }
+    }
+
+    pub fn save_parameters(&mut self) {
+        let mut paras: Vec<Parameters> = Vec::new();
+        for l in &self.network_layers {
+            if let Some(p) = l.save() {
+                paras.push(p);
+            }
+        }
+
+        to_writer(&File::create("db_params.json").unwrap(), &paras).unwrap();
+        
+    }
+
+    pub fn restore_parameters(&mut self) {  
+        if let Ok(file ) = File::open("db_params.json") {
+            let reader = BufReader::new(file);
+            
+            if let Ok(data) = from_reader::<BufReader<File>, Vec<Parameters>>(reader) {
+                for index in 0..data.len() {
+                    if let Some(layer ) = data.iter().find(|d| d.layer_id == (index as i32)) {
+                        self.network_layers.iter_mut().for_each(|l| {
+                            if l.get_layer_id() == layer.layer_id {
+                                l.set_weights(layer.layer_weights.clone());
+                                l.set_biases(layer.layer_biases.clone());
+                            }
+                        });
+                    }
+                }
+            }
+
+        }
+    }
+
+    pub fn show_parameters(&self) {
+        for layer in &self.network_layers {
+            println!("layer_id: {} weights: {:#?}", layer.get_layer_id(), layer.get_weights());
+            println!("layer_id: {} biases: {:#?}", layer.get_layer_id(), layer.get_biases());
         }
     }
 }
@@ -86,9 +127,9 @@ where L: LayerT + Clone
 impl<L> NetworkT for PerceptronNetwork<L> 
 where L: LayerT + Clone
 {
-    fn train(&mut self, lr: f64, batch_size: Option<usize>, optimizers: (LossFunction, GradFunction, Optimizer), epoch: i32) {
-        let loss_f: fn(output: &MatrixD<f64>, target: &MatrixD<f64>) -> MatrixD<f64> = optimizers.0;
-        let loss_grad_f: fn(errors: MatrixD<f64>) -> MatrixD<f64> = optimizers.1;
+    fn train(&mut self, lr: f32, batch_size: Option<usize>, optimizers: (LossFunction, GradFunction, Optimizer), epoch: i32) {
+        let loss_f: fn(output: &MatrixD<f32>, target: &MatrixD<f32>) -> MatrixD<f32> = optimizers.0;
+        let loss_grad_f: fn(errors: MatrixD<f32>) -> MatrixD<f32> = optimizers.1;
 
         // get batch size
         let bat_size = match batch_size {
@@ -150,7 +191,14 @@ where L: LayerT + Clone
         }
     }
 
-    fn predict(&mut self, _input: &MatrixD<f64>) -> MatrixD<f64> {
-        MatrixD::zeros(3,5)
+    fn predict(&mut self, input: &MatrixD<f32>) -> MatrixD<f32> {
+        let mut inputs = input.clone();
+                
+        // forword into all layers
+        for index in 0..self.network_layers.len() {
+            let layer = &mut self.network_layers[index];
+            inputs = layer.forward(&inputs);   
+        }
+        inputs
     }
 }
