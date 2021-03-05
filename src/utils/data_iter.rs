@@ -2,7 +2,7 @@ use rand::{thread_rng, seq::SliceRandom};
 use crate::maths::types::MatrixD;
 use std::cmp::min;
 
-pub fn data_iter(batch_size: usize, features: &MatrixD<f32>, labels: &MatrixD<f32>) -> Vec<(MatrixD<f32>, MatrixD<f32>)> {
+pub fn data_iter(batch_size: usize, features: &MatrixD<f64>, labels: &MatrixD<f64>) -> Vec<(MatrixD<f64>, MatrixD<f64>)> {
     let mut rng = thread_rng();
     let num_examples = features.ncols();
 

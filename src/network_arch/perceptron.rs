@@ -26,13 +26,13 @@ use std::{io::BufReader, fs::File};
 ///
 /// // rows are neurons and columns are inputs
 /// // 7 inputs for 3 neurons
-/// let true_w = MatrixD::<f32>::from_row_slice(3, 7, &[
+/// let true_w = MatrixD::<f64>::from_row_slice(3, 7, &[
 ///     2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0,
 ///     2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0,
 ///     2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0
 /// ]);
 ///
-/// let true_b = MatrixD::<f32>::from_row_slice(3, 1, &[
+/// let true_b = MatrixD::<f64>::from_row_slice(3, 1, &[
 ///     2.0,
 ///     -3.4,
 ///     1.0
@@ -66,15 +66,15 @@ pub struct PerceptronNetwork<L>
 where L: LayerT + Clone
 {
     network_db_id: String,
-    network_inputs: MatrixD<f32>,
+    network_inputs: MatrixD<f64>,
     network_layers: Vec<L>,
-    network_outputs: MatrixD<f32>
+    network_outputs: MatrixD<f64>
 }
 
 impl<L> PerceptronNetwork<L>
 where L: LayerT + Clone
 {
-    pub fn new(network_inputs: MatrixD<f32>, network_layers: Vec<L>, network_outputs: MatrixD<f32>) -> PerceptronNetwork<L> {
+    pub fn new(network_inputs: MatrixD<f64>, network_layers: Vec<L>, network_outputs: MatrixD<f64>) -> PerceptronNetwork<L> {
         
         PerceptronNetwork {
             network_db_id: String::new(),
@@ -102,7 +102,7 @@ where L: LayerT + Clone
             
             if let Ok(data) = from_reader::<BufReader<File>, Vec<Parameters>>(reader) {
                 for index in 0..data.len() {
-                    if let Some(layer ) = data.iter().find(|d| d.layer_id == (index as i32)) {
+                    if let Some(layer ) = data.iter().find(|d| d.layer_id == (index as i32) + 1) {
                         self.network_layers.iter_mut().for_each(|l| {
                             if l.get_layer_id() == layer.layer_id {
                                 l.set_weights(layer.layer_weights.clone());
@@ -127,18 +127,19 @@ where L: LayerT + Clone
 impl<L> NetworkT for PerceptronNetwork<L> 
 where L: LayerT + Clone
 {
-    fn train(&mut self, lr: f32, batch_size: Option<usize>, optimizers: (LossFunction, GradFunction, Optimizer), epoch: i32) {
-        let loss_f: fn(output: &MatrixD<f32>, target: &MatrixD<f32>) -> MatrixD<f32> = optimizers.0;
-        let loss_grad_f: fn(errors: MatrixD<f32>) -> MatrixD<f32> = optimizers.1;
+    fn train(&mut self, lr: f64, batch_size: Option<usize>, optimizers: (LossFunction, GradFunction, Optimizer), epoch: i32) {
+        let loss_f: fn(output: &MatrixD<f64>, target: &MatrixD<f64>) -> MatrixD<f64> = optimizers.0;
+        let loss_grad_f: fn(errors: MatrixD<f64>) -> MatrixD<f64> = optimizers.1;
 
         // get batch size
         let bat_size = match batch_size {
             Some(size) => size,
             None => 1
         };
-
-        for round in 1..epoch {
-
+        
+        //let mut round: i64 = 0;
+        //'round_tour: loop {
+        for round in 0..epoch {
             for (feature, label) in data_iter(bat_size, &self.network_inputs, &self.network_outputs){
                 
                 let mut input = feature.clone();
@@ -175,8 +176,12 @@ where L: LayerT + Clone
             
             // calculate the last layer gradient here
             let error = loss_f(&input, &self.network_outputs);
-            println!("epoch: {:?} => loss: {:?}", round, error.mean());
+            let error_mean = error.mean();
+            /*if ((error_mean * 1000.0).trunc() / 1000.0) == 0.0008 {
+                break 'round_tour;
+            }*/
             let loss_grad = loss_grad_f(error);
+            println!("epoch: {:?} => loss: {:?}", round, error_mean);
             let mut extern_gradient = loss_grad.clone();
             // backword into all layers for the last to the first
             let mut indexes: Vec<_> = (0..self.network_layers.len()).into_iter().collect();
@@ -188,10 +193,11 @@ where L: LayerT + Clone
                 
                 extern_gradient = layer.backward(&lr, &bat_size, &extern_gradient, &optimizers.2);
             }
+            //round = round + 1;
         }
     }
 
-    fn predict(&mut self, input: &MatrixD<f32>) -> MatrixD<f32> {
+    fn predict(&mut self, input: &MatrixD<f64>) -> MatrixD<f64> {
         let mut inputs = input.clone();
                 
         // forword into all layers

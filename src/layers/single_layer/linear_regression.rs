@@ -11,10 +11,10 @@ use nalgebra::DVector;
 #[derive(Debug, Clone)]
 pub struct LrLayer {
     layer_id: i32,
-    inputs: Option<MatrixD<f32>>,
-    net_inputs: Option<MatrixD<f32>>,
-    weights: MatrixD<f32>,
-    biases: MatrixD<f32>,
+    inputs: Option<MatrixD<f64>>,
+    net_inputs: Option<MatrixD<f64>>,
+    weights: MatrixD<f64>,
+    biases: MatrixD<f64>,
     activator: Activator, 
     activator_deriv: Option<ActivatorDeriv>
 }
@@ -26,15 +26,15 @@ impl LrLayer {
         let mut rng = thread_rng(); 
 
         // rows are for neurons and columns are for inputs per neuron
-        let weights = MatrixD::<f32>::from_fn(1, n_inputs, |_a, _b| {
+        let weights = MatrixD::<f64>::from_fn(1, n_inputs, |_a, _b| {
             
-            let value = rng.gen::<f32>(); // generate float between 0.0 and 1.0
+            let value = rng.gen::<f64>(); // generate float between 0.0 and 1.0
             value
         });
 
-        let biases = MatrixD::<f32>::from_fn(1, 1 , |_a, _b| {
+        let biases = MatrixD::<f64>::from_fn(1, 1 , |_a, _b| {
             
-            let value = rng.gen::<f32>(); // generate float between 0.0 and 1.0
+            let value = rng.gen::<f64>(); // generate float between 0.0 and 1.0
             value
         });
 
@@ -55,18 +55,18 @@ impl LrLayer {
 
 impl LayerT for LrLayer {
 
-    fn forward(&mut self, inputs: &MatrixD<f32>) -> MatrixD<f32> {
-        let activ_func: fn(MatrixD<f32>) -> MatrixD<f32> = self.activator;
+    fn forward(&mut self, inputs: &MatrixD<f64>) -> MatrixD<f64> {
+        let activ_func: fn(MatrixD<f64>) -> MatrixD<f64> = self.activator;
         // calculate net_inputs
         let (wr, _wc) = self.weights.shape();
         let (_ir, ic) = inputs.shape();
 
-        let mut net = MatrixD::<f32>::zeros(wr, ic);
-        let mut net_input_part1 =  MatrixD::<f32>::zeros(wr, ic);
+        let mut net = MatrixD::<f64>::zeros(wr, ic);
+        let mut net_input_part1 =  MatrixD::<f64>::zeros(wr, ic);
         self.weights.mul_to(&inputs, &mut net_input_part1);
 
         (0..ic).into_iter().for_each(|m| {
-            let mut col_value = DVector::<f32>::from_element(wr, 0.0);
+            let mut col_value = DVector::<f64>::from_element(wr, 0.0);
             
             net_input_part1.column(m).add_to(&self.biases, &mut col_value);
             net.set_column(m, &col_value);
@@ -78,9 +78,9 @@ impl LayerT for LrLayer {
         
     }
 
-    fn backward(&mut self, lr: &f32, batch_size: &usize, gradient: &MatrixD<f32>, optimizer: &Optimizer) -> MatrixD<f32> {
+    fn backward(&mut self, lr: &f64, batch_size: &usize, gradient: &MatrixD<f64>, optimizer: &Optimizer) -> MatrixD<f64> {
         let grad = gradient.clone();
-        let opt_func: fn(lr: &f32, batch_size: &usize, gradient: &MatrixD<f32>, param: &MatrixD<f32>, input: Option<&MatrixD<f32>>) -> MatrixD<f32> = *optimizer;
+        let opt_func: fn(lr: &f64, batch_size: &usize, gradient: &MatrixD<f64>, param: &MatrixD<f64>, input: Option<&MatrixD<f64>>) -> MatrixD<f64> = *optimizer;
 
         let input = if let Some(ref inp) = self.inputs {
             inp
@@ -99,15 +99,15 @@ impl LayerT for LrLayer {
         self.layer_id
     }
 
-    fn set_weights(&mut self, weights: MatrixD<f32>) {
+    fn set_weights(&mut self, weights: MatrixD<f64>) {
         self.weights = weights;
     }
 
-    fn set_biases(&mut self, biases: MatrixD<f32>) {
+    fn set_biases(&mut self, biases: MatrixD<f64>) {
         self.biases = biases;
     }
 
-    fn get_weights(&self) -> Option<MatrixD<f32>> {None}
+    fn get_weights(&self) -> Option<MatrixD<f64>> {None}
 
-    fn get_biases(&self) -> Option<MatrixD<f32>> {None}
+    fn get_biases(&self) -> Option<MatrixD<f64>> {None}
 }

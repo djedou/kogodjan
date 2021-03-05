@@ -15,7 +15,7 @@ use kongodjan::{
 fn linear_regression() {
 
     // rows are neurons and columns are inputs
-    let true_w = MatrixD::<f32>::from_row_slice(1, 2, &[
+    let true_w = MatrixD::<f64>::from_row_slice(1, 2, &[
         2.0, -3.4
     ]);
 

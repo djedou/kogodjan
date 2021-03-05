@@ -16,13 +16,13 @@ fn linear_regression() {
 
     // rows are neurons and columns are inputs
     // 7 inputs for 3 neurons
-    let true_w = MatrixD::<f32>::from_row_slice(3, 7, &[
+    let true_w = MatrixD::<f64>::from_row_slice(3, 7, &[
         2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0,
         2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0,
         2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0
     ]);
 
-    let true_b = MatrixD::<f32>::from_row_slice(3, 1, &[
+    let true_b = MatrixD::<f64>::from_row_slice(3, 1, &[
         2.0,
         -3.4,
         1.0
