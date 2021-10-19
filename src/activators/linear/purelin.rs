@@ -1,6 +1,6 @@
-use crate::maths::types::MatrixD;
+use djed_maths::linear_algebra::matrix::Matrix;
 
 /// Linear
-pub fn purelin(input: MatrixD<f64>) -> MatrixD<f64> {
+pub fn purelin(input: Matrix<f64>) -> Matrix<f64> {
     input
 }

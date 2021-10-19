@@ -1,5 +1,5 @@
 
-use kongodjan::{
+/*use kongodjan::{
     maths::types::MatrixD,
     utils::{synthetic_data},
     layers::single_layer::LrLayer,
@@ -39,3 +39,4 @@ fn linear_regression() {
     //let pred = network.predict(&test_x);
     //println!("output: {:?}", pred);
 }
+*/

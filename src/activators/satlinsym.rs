@@ -1,5 +1,5 @@
 
-
+/*
 /// Symmetric Saturating Linear
 pub fn satlinsym(input: f64) -> f64 {
     if input < -1.0 {
@@ -12,3 +12,4 @@ pub fn satlinsym(input: f64) -> f64 {
         1.0
     }
 }
+*/

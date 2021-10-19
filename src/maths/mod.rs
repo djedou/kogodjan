@@ -1,3 +1,3 @@
-pub mod types;
-pub mod algebra;
-pub(crate) mod constants;
+mod matrix;
+
+pub use matrix::*;

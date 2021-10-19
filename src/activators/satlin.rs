@@ -1,4 +1,4 @@
-
+/*
 
 /// Saturating Linear
 pub fn satlin(input: f64) -> f64 {
@@ -11,4 +11,4 @@ pub fn satlin(input: f64) -> f64 {
     else {
         1.0
     }
-}
+}*/

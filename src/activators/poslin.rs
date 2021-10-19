@@ -1,4 +1,4 @@
-
+/*
 
 /// Positive Linear
 pub fn poslin(input: f64) -> f64 {
@@ -8,4 +8,4 @@ pub fn poslin(input: f64) -> f64 {
     else {
         input
     }
-}
+}*/

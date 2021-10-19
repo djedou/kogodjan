@@ -1,4 +1,4 @@
-use ndarray::{ArrayD, Array, IxDyn};
+/*use ndarray::{ArrayD, Array, IxDyn};
 use crate::activations::{FLOAT_SIZE_100};
 
 /// each neuron in the output layer learns its own error
@@ -62,6 +62,14 @@ pub fn single_neuron_error_func(target: &ArrayD<f64>, output: ArrayD<f64>) -> (b
         }
     }
 }
+*/
+
+
+
+
+
+
+
 
 /*
 let should_learn = |output: ArrayD<f64>, target: &ArrayD<f64>, total_error_target: f64| -> (bool, ArrayD<f64>) {

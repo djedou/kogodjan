@@ -1,4 +1,4 @@
-use crate::maths::types::MatrixD;
+/*use crate::maths::types::MatrixD;
 use rand::{thread_rng, Rng};
 use crate::neural_traits::LayerT;
 use crate::activators::types::{Activator, ActivatorDeriv};
@@ -111,3 +111,4 @@ impl LayerT for LrLayer {
 
     fn get_biases(&self) -> Option<MatrixD<f64>> {None}
 }
+*/

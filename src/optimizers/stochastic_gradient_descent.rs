@@ -1,22 +1,36 @@
-use crate::maths::{
-    types::MatrixD
+use djed_maths::linear_algebra::{
+    matrix::Matrix,
+    //vector::{ZipCallBack}
 };
+use std::sync::{Arc, Mutex};
 
-pub fn sgd(lr: &f64, batch_size: &usize, gradient: &MatrixD<f64>, param: &MatrixD<f64>, input: Option<&MatrixD<f64>>) -> MatrixD<f64> {
-    let mut param_clone = param.clone();
+
+pub fn sgd(lr: f64, gradient: &Matrix<f64>, param: &Matrix<f64>, input: Option<&Matrix<f64>>) -> Matrix<f64> {
     
+    let callback = |p, g| p - g;
+  
     if let Some(inp) = input {
-        //let inp_sum = inp;
-        let inp_sum_t = inp.transpose();
-        let mut grad_input = MatrixD::<f64>::zeros(gradient.nrows(), inp_sum_t.ncols());
-        gradient.mul_to(&inp_sum_t, &mut grad_input);
-        param_clone.zip_apply(&grad_input, |p, g| p - (lr * (g / (*batch_size as f64))));
-        
-        param_clone
+        let batch_m_lr = lr * (-1.0 / (inp.nrows() as f64));
+
+        let grad = inp.transpose().dot_product(&gradient).unwrap();
+        grad.mul_by_scalar(batch_m_lr);
+
+        let new_param = param.zip_apply(&grad, callback).unwrap();
+
+        new_param
+
     } else {
-        let grad_sum = gradient.column_sum();
-        param_clone.zip_apply(&grad_sum, |p, g| p - (lr * (g / (*batch_size as f64))));
+
+        let mut param_clone = param.clone();
+        let batch_m_lr = lr * (-1.0 / (gradient.nrows() as f64));
         
+        for batch in 0..gradient.nrows() {
+            let grad = gradient.get_row(batch).into_matrix(gradient.ncols());
+            param_clone = param_clone.zip_apply(&grad, callback.clone()).unwrap();
+        }
+        param_clone.mul_by_scalar(batch_m_lr);
+
         param_clone
     }
+    
 }

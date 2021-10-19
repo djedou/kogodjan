@@ -1,21 +1,28 @@
-use crate::maths::types::MatrixD;
+
+use djed_maths::linear_algebra::{
+    matrix::Matrix,
+    //vector::CallBack
+};
+//use std::sync::{Arc, Mutex};
+
 
 /// Log-Sigmoid
-pub fn logsig(input: MatrixD<f64>) -> MatrixD<f64> {
+pub fn logsig(input: Matrix<f64>) -> Matrix<f64> {
     //1.0 / (1.0 + (-input).exp());
-    let mut res = input.clone();
-    res.apply(|a| 1.0 / (1.0 + (-a).exp()));
-    res
+    let callback = |v| {
+        1.0 / (1.0 + (-(v as f64)).exp())
+    };
+    
+    input.apply(callback)
 }
 
 
 /// derivative of Log-Sigmoid
-pub fn logsig_deriv(input: MatrixD<f64>) -> MatrixD<f64> {
-    //1.0 / (1.0 + (-input).exp());
-    let mut res = input.clone();
-    res.apply(|a| {
-        let b = 1.0 / (1.0 + (-a).exp());
-        (1.0 - b) * b
-    });
-    res
+pub fn logsig_deriv(input: Matrix<f64>) -> Matrix<f64> {
+    //a * (1-a)
+    let callback = |v| {  
+        (1.0 / (1.0 + (-(v as f64)).exp())) * (1.0 - (1.0 / (1.0 + (-(v as f64)).exp())))
+    };
+
+    input.apply(callback)
 }
