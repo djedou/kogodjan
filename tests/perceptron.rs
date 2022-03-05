@@ -1,14 +1,12 @@
-use djed_maths::linear_algebra::matrix::Matrix;
-use kongodjan::{
+//use djed_maths::linear_algebra::matrix::Matrix;
+/*use kongodjan::{
     //maths::types::MatrixD,
-    utils::{synthetic_data_mat},
     layers::multi_layers::FcLayer,
     activators::non_linear::{logsig, logsig_deriv/*, tansig, tansig_deriv*/},
     network_arch::FCNetwork,
     loss_functions::{squared_loss, squared_loss_gradient},
     neural_traits::NetworkT,
-    optimizers::sgd
-};
+};*/
 
 
 #[test]

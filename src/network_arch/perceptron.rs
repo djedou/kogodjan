@@ -1,14 +1,13 @@
 //maths::types::MatrixD,
 /*, Parameters*/
 use crate::{
-    optimizers::Optimizer,
     loss_functions::{LossFunction, GradFunction},
-    utils::{data_iter, extern_gradient},
+    utils::{data_iter/*, extern_gradient*/},
     neural_traits::{LayerT, NetworkT},
 };
 //use serde_json::{to_writer, from_reader};
 //use std::{io::BufReader, fs::File};
-use djed_maths::linear_algebra::matrix::Matrix;
+use crate::maths::Matrix;
 
 
 /*
@@ -132,85 +131,73 @@ where L: LayerT + Clone
 impl<L> NetworkT for FCNetwork<L> 
 where L: LayerT + Clone
 {
-    fn train(&mut self, lr: f64, batch_size: usize, optimizers: (LossFunction, GradFunction, Optimizer), epoch: i32) -> Result<(), String> {
+    fn train(&mut self, lr: f64, batch_size: usize, optimizers: (LossFunction, GradFunction), epoch: i32) -> Result<(), String> {
 
         
         let loss_f: fn(output: &Matrix<f64>, target: &Matrix<f64>) -> f64 = optimizers.0;
-        let loss_grad_f: fn(output: &mut Matrix<f64>, target: &Matrix<f64>) -> Matrix<f64> = optimizers.1;
-        
+        let loss_grad_f: fn(output: &Matrix<f64>, target: &Matrix<f64>) -> Matrix<f64> = optimizers.1;
         
         //let mut round: i64 = 0;
-        //'round_tour: loop {
-        for round in 0..epoch {
+        for _round in 0..epoch {
             for (feature, label) in data_iter(batch_size, &self.network_inputs, &self.network_outputs) {
                 let mut input = feature.clone();
-               
+                
                 // forword into all layers
                 for index in 0..self.network_layers.len() {
                     let layer = &mut self.network_layers[index];
                     input = layer.forward(&input)?;
                 }
-                /*println!("output");
-                input.view();
-                println!("target");
-                label.view();*/
-                
+            
                 let cost = loss_f(&input, &label);
-                println!("Cost: {}", cost);
+                println!("error: {:#?}", cost);
 
-                let mut gradient = loss_grad_f(&mut input, &label);
+                let mut gradient = loss_grad_f(&input, &label);
                 
                 // backword into all layers for the last to the first
-                let mut indexes: Vec<_> = (0..self.network_layers.len()).into_iter().collect();
-                indexes.reverse();
-                let len = indexes.len() - 1;
-                for ind in 0..indexes.len() {
-                    let i = len - ind;
-                    let layer = &mut self.network_layers[i];
+                let indexes: Vec<_> = (0..self.network_layers.len()).into_iter().rev().collect();
+                let lastlayer_index = indexes.len() - 1;
 
-                    gradient = layer.backward(lr, &gradient, &optimizers.2);
+                for ind in indexes.iter() {
+                    if ind == &lastlayer_index {
+                        // prepare gradient here
+                        let layer = &mut self.network_layers[lastlayer_index];
+                        let net_input = layer.get_net_inputs().unwrap();
+                        let der = layer.get_activator_deriv().unwrap();
+                        let net_input_der = der(net_input);
+
+                        let local_gradient = net_input_der.get_data() * gradient.get_data();
+                        let local_gradient_mat = Matrix::new_from_array2(&local_gradient);
+
+                        gradient = local_gradient_mat.clone();
+
+                        layer.backward(lr, &local_gradient_mat);
+
+                    }
+                    else {
+                        // prepare gradient here
+                        let m_1_weights = &self.network_layers[*ind + 1]
+                                .get_weights()
+                                .unwrap()
+                                .get_data().reversed_axes();
+
+                        let layer = &mut self.network_layers[*ind];
+                        let net_input = layer.get_net_inputs().unwrap();
+                        let der = layer.get_activator_deriv().unwrap();
+                        let net_input_der = der(net_input);
+                        
+                        let wp = m_1_weights.dot(&gradient.get_data());
+                        let wp_grad = wp * net_input_der.get_data();
+                        
+                        let new_gradient = Matrix::new_from_array2(&wp_grad);
+
+                        gradient = new_gradient.clone();
+                        
+                        layer.backward(lr, &new_gradient);
+                    }
+
                 }
-            }
-   /*  new comment         
-            let mut input = self.network_inputs.clone();
-                
-            // forword into all layers
-            for index in 0..self.network_layers.len() {
-                let layer = &mut self.network_layers[index];
-                input = layer.forward(&input)?;
-            }
-            println!("output");
-            //&self.network_outputs.view();
+            } 
             
-            // calculate the last layer gradient here
-            let cost = loss_f(&input, &self.network_outputs, bat_size);
-            
-            println!("epoch: {:?} => loss:", round);
-            cost.view();
-
-            new comment end
-*/
-
-/*
-            let extern_gradient = extern_gradient( &loss_grad_f, &input, &self.network_outputs, bat_size)?;
-            //println!("extern_gradient");
-            //extern_gradient.view();
-            
-            //let prev_weights = None;
-            let mut gradient = extern_gradient;
-
-            // backword into all layers for the last to the first
-            let mut indexes: Vec<_> = (0..self.network_layers.len()).into_iter().collect();
-            indexes.reverse();
-            let len = indexes.len() - 1;
-            for ind in 0..indexes.len() {
-                let i = len - ind;
-                let layer = &mut self.network_layers[i];
-
-                gradient = layer.backward(lr, &gradient, &optimizers.2);
-            }
-            */
-            break;
         }
         Ok(())
     }
@@ -223,6 +210,7 @@ where L: LayerT + Clone
             let layer = &mut self.network_layers[index];
             inputs = layer.forward(&inputs)?;
         }
+
         Ok(inputs)
     }
 }

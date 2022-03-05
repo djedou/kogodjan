@@ -1,14 +1,14 @@
 use ndarray::{Array2, arr2, FixedInitializer};
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Matrix<A>
 where 
     A: Clone
 {
-    pub nrows: usize,
-    pub ncols: usize,
-    pub data: Array2<A>
+    nrows: usize,
+    ncols: usize,
+    data: Array2<A>
 }
 
 
@@ -26,5 +26,25 @@ where
             ncols: arr.ncols(),
             data: arr
         }
+    }
+
+    pub fn new_from_array2(xs: &Array2<A>) -> Matrix<A> {
+        Matrix {
+            nrows: xs.nrows(),
+            ncols: xs.ncols(),
+            data: xs.clone()
+        }
+    }
+
+    pub fn get_nrows(&self) -> usize {
+        self.nrows
+    }
+    
+    pub fn get_ncols(&self) -> usize {
+        self.ncols
+    }
+
+    pub fn get_data(&self) -> Array2<A> {
+        self.data.clone()
     }
 }

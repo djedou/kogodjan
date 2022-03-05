@@ -1,8 +1,7 @@
 
 //use crate::maths::types::MatrixD;
-use djed_maths::linear_algebra::matrix::Matrix;
+use crate::maths::Matrix;
 use crate::activators::types::{ActivatorDeriv};
-use crate::optimizers::Optimizer;
 //use crate::utils::Parameters;
 use std::fmt::Debug;
 
@@ -32,7 +31,9 @@ pub trait LayerT: Debug {
 
     fn forward(&mut self, inputs: &Matrix<f64>) -> Result<Matrix<f64>, String>;
 
-    fn backward(&mut self, lr: f64, gradient: &Matrix<f64>, optimizer: &Optimizer) -> Matrix<f64>;
+    fn backward(&mut self, lr: f64, gradient: &Matrix<f64>);
+
+    fn update_parameters(&mut self);
 
     fn get_layer_id(&self) -> i32 {0}
 
@@ -46,7 +47,11 @@ pub trait LayerT: Debug {
 
     fn get_weights(&self) -> Option<Matrix<f64>>;
 
+    fn get_inputs(&self) -> Option<Matrix<f64>>;
+
     fn get_biases(&self) -> Option<Matrix<f64>>;
+
+    fn get_net_inputs(&self) -> Option<Matrix<f64>>;
 
     fn get_activator_deriv(&self) -> Option<ActivatorDeriv>;
 

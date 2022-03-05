@@ -1,28 +1,32 @@
 
-use djed_maths::linear_algebra::{
-    matrix::Matrix,
-    //vector::CallBack
-};
-//use std::sync::{Arc, Mutex};
-
+use crate::maths::Matrix;
+use ndarray::{Array2, Zip};
 
 /// Log-Sigmoid
-pub fn logsig(input: Matrix<f64>) -> Matrix<f64> {
-    //1.0 / (1.0 + (-input).exp());
-    let callback = |v| {
-        1.0 / (1.0 + (-(v as f64)).exp())
-    };
+pub fn logsig(net_input: Matrix<f64>) -> Matrix<f64> {
+
+    let mut output: Array2<f64> = Array2::zeros(net_input.get_data().dim());
     
-    input.apply(callback)
+    Zip::from(&mut output)
+        .and(&net_input.get_data())
+        .par_for_each(|o, &a| {
+            *o = 1.0 / (1.0 + (-a).exp());
+        });
+    
+    Matrix::new_from_array2(&output)
 }
 
 
 /// derivative of Log-Sigmoid
 pub fn logsig_deriv(input: Matrix<f64>) -> Matrix<f64> {
     //a * (1-a)
-    let callback = |v| {  
-        (1.0 / (1.0 + (-(v as f64)).exp())) * (1.0 - (1.0 / (1.0 + (-(v as f64)).exp())))
-    };
-
-    input.apply(callback)
+    let mut output: Array2<f64> = Array2::zeros(input.get_data().dim());
+    
+    Zip::from(&mut output)
+        .and(&input.get_data())
+        .par_for_each(|o, &a| {
+            *o = (1.0 / (1.0 + (-a).exp())) * (1. - (1.0 / (1.0 + (-a).exp())));
+        });
+    
+    Matrix::new_from_array2(&output)
 }

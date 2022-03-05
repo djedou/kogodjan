@@ -1,37 +1,36 @@
-use djed_maths::linear_algebra::{
-    matrix::Matrix,
-    //vector::ZipCallBack
-};
-use std::sync::{Arc, Mutex};
-//use djed_maths::linear_algebra::vector::{CallBack};
-/*use crate::{
-    utils::round
-};*/
+use crate::maths::Matrix;
+use ndarray::{Array2, Zip};
 
 /// log loss
 pub fn log_loss(output: &Matrix<f64>, target: &Matrix<f64>) -> f64 {
-    let size = output.ncols() * output.nrows();
-    let callback = |o,t| ((t as f64) * (o as f64).ln()) + ((1.0 - t as f64) * (1.0 - o as f64).ln());
-    
-    let cost = output.zip_apply(&target, callback).unwrap();
-   
-    let mut cols: Vec<f64> = Vec::new();
-    for i in 0..cost.ncols() {
-        let col: f64 = cost.get_col(i).get_data().into_iter().sum();
-        cols.push(col);
-    }
-    let network_cost: f64 = cols.into_iter().sum();
-    let network_cost: f64 = network_cost * (- 1.0 / size as f64);
 
-    network_cost
+    let mut res: Array2<f64> = Array2::zeros(output.get_data().dim());
+
+    let rows = res.nrows();
+    let cols = res.ncols();
+
+    Zip::from(&mut res)
+        .and(&output.get_data())
+        .and(&target.get_data())
+        .par_for_each(|r, &o, &t| {
+            *r = -(t * o.ln() + ((1. - t) * ((1. - o) as f64).ln()));
+        });
+
+    res.sum() / (rows * cols) as f64
 }
 
 /// Squared loss gradient
-pub fn log_loss_gradient(output: &mut Matrix<f64>, target: &Matrix<f64>) -> Matrix<f64> {
+pub fn log_loss_gradient(output: &Matrix<f64>, target: &Matrix<f64>) -> Matrix<f64> {
     // o - t
-    //let callback = |o,t| (t / o) - ((1.0 - t) / (1.0 - o));
-    //let callback: ZipCallBack<f64,f64> = Arc::new(Mutex::new(|o,t| ((1.0 - t) / (1.0 - o)) - (t / o)));
-    //let gradient = output.zip_apply(&target, callback).unwrap();
-    let gradient = output.sub_matrix(&target).unwrap();
-    gradient
+    let mut res: Array2<f64> = Array2::zeros(output.get_data().dim());
+
+    Zip::from(&mut res)
+        .and(&output.get_data())
+        .and(&target.get_data())
+        .par_for_each(|r, &o, &t| {
+            *r = o - t;
+        });
+
+    Matrix::new_from_array2(&res)
+
 }

@@ -1,13 +1,9 @@
-//use random_number::rand::{thread_rng, Rng};
 use crate::neural_traits::LayerT;
 use crate::activators::types::{Activator, ActivatorDeriv};
-use std::sync::{Arc, Mutex};
-use crate::{
-    optimizers::Optimizer
-};
-//use djed_maths::linear_algebra::vector::{ZipCallBack};
+use crate::maths::Matrix;
+use ndarray::{Array2, Axis};
+use rand::random;
 
-use djed_maths::linear_algebra::matrix::Matrix;
 /// Linear Regression Layer
 #[derive(Debug, Clone)]
 pub struct FcLayer {
@@ -24,23 +20,17 @@ impl FcLayer {
     /// create a new Full Connected Layer  
     /// n_inputs(neuron input) is the number of input for the single neuron in the layer 
     /// n_neurons is the number of neurons for the layer    
-    pub fn new(n_inputs: usize, n_neurons: usize, batch_size: usize, activator: Activator, activator_deriv: Option<ActivatorDeriv>, layer_id: i32) -> FcLayer {
+    pub fn new(n_inputs: usize, n_neurons: usize, activator: Activator, activator_deriv: Option<ActivatorDeriv>, layer_id: i32) -> FcLayer {
         
-        let weights_callback = |_x| {
-            //let value: f64 = random!(); // generate float between 0.0 and 1.0
-            //value
-            random!()
-        };
+        
         // rows are for neurons and columns are for inputs
-        let weights = Matrix::new_from_fn(n_neurons, n_inputs, weights_callback);
+        let layer_weights = Array2::from_shape_fn((n_neurons, n_inputs), |(_, _)| random::<f64>());
+        let weights = Matrix::new_from_array2(&layer_weights);
+
         
-        let biases_callback = |_x| {
-            //let value: f64 = random!(); // generate float between 0.0 and 1.0
-            //value
-            random!()
-        };
- 
-        let biases = Matrix::new_from_fn(n_neurons, batch_size, biases_callback);
+        // rows are neurons and each neurons has one bias
+        let layer_biases = Array2::from_shape_fn((n_neurons, 1), |(_, _)| random::<f64>());
+        let biases = Matrix::new_from_array2(&layer_biases);
     
         FcLayer {
             layer_id,
@@ -60,55 +50,50 @@ impl FcLayer {
 impl LayerT for FcLayer {
 
     fn forward(&mut self, inputs: &Matrix<f64>) -> Result<Matrix<f64>, String> {
+
+        let wp: Array2<f64> = self.weights.get_data().dot(&inputs.get_data());
+        
+        let wp_b: Array2<f64> = wp + self.biases.get_data();
+        let wp_b_mat = Matrix::new_from_array2(&wp_b);
+        
+        // save net_inputs
+        self.net_inputs = Some(wp_b_mat.clone());
+
         // save input from previous layer
         self.inputs = Some(inputs.clone());
 
         // get the activation function
         let activ_func: fn(Matrix<f64>) -> Matrix<f64> = self.activator;
 
-        // calcule weights_inputs = weights * inputs
-        let mut wx = self.weights.dot_product(&inputs).unwrap();
-        
-        // prepared bias
-        let new_bias = self.biases.clone();
-        
-        // wx + b
-        let wx_b = wx.add_matrix(&new_bias).unwrap();
-        
-        // save net_inputs
-        self.net_inputs = Some(wx_b.clone());
-
         // get layer output by apply the activation function
-        let output = activ_func(wx_b);
+        let output = activ_func(wp_b_mat);
         Ok(output)
     }
 
-    fn backward(&mut self, lr: f64, gradients: &Matrix<f64>, optimizer: &Optimizer) -> Matrix<f64> {
+    fn backward(&mut self, lr: f64, gradients: &Matrix<f64>) {
 
-        let opt_func: fn(lr: f64, gradient: &Matrix<f64>, param: &Matrix<f64>,  input: Option<&Matrix<f64>>) -> Matrix<f64> = *optimizer;
+        // update Weights
+        let inputs_trans = &self.get_inputs()
+                                .unwrap()
+                                .get_data().reversed_axes();
 
-        let new_grad = self.weights.transpose().dot_product(&gradients).unwrap();
+        let inputs_trans_mat = Matrix::new_from_array2(&inputs_trans);             
+        let grad_inpt = gradients.get_data().dot(&inputs_trans_mat.get_data());
+        let new_weights = self.weights.get_data() - (lr * grad_inpt);
+        self.weights = Matrix::new_from_array2(&new_weights);
 
-        let deriv: fn(Matrix<f64>) -> Matrix<f64> = if let Some(d) = self.activator_deriv {
-            d
-        } else {
-            panic!("please provide derivative for all activators");
-        };
-        
-        // The net_input gradient
-        let layer_grad = if let Some(ref net) = self.net_inputs {
-            deriv(net.clone())
-        } else {
-            panic!("this layer can not be used");
-        };
+        // update Biases
+        let nrows = gradients.get_nrows();
+        let ncols = gradients.get_ncols();
 
-        let callback_grad = |a,b| a * b;
-        let grad_driv: Matrix<f64> = gradients.zip_apply(&layer_grad, callback_grad).unwrap();
+        let grad = gradients
+            .get_data()
+            .sum_axis(Axis(1))
+            .map(|a| *a / ncols as f64)
+            .into_shape((nrows, 1)).unwrap();
 
-        self.weights = opt_func(lr, &grad_driv, &self.weights, Some(&self.inputs.clone().unwrap()));
-        self.biases = opt_func(lr, &grad_driv, &self.biases, None);
-
-        new_grad
+        let new_bias = self.biases.get_data() - grad;
+        self.biases = Matrix::new_from_array2(&new_bias);
         
     }
 
@@ -121,19 +106,28 @@ impl LayerT for FcLayer {
 
     }*/
     
+    fn update_parameters(&mut self) {
+
+    }
+
     fn get_layer_id(&self) -> i32 {
         self.layer_id
     }
 
+    
     fn set_weights(&mut self, weights: Matrix<f64>) {
         self.weights = weights;
     }
-
+    
     fn set_biases(&mut self, biases: Matrix<f64>) {
         self.biases = biases;
     }
-
+    
     fn get_weights(&self) -> Option<Matrix<f64>> { Some(self.weights.clone())}
+
+    fn get_inputs(&self) -> Option<Matrix<f64>> { self.inputs.clone()}
+    
+    fn get_net_inputs(&self) -> Option<Matrix<f64>> { self.net_inputs.clone()}
 
     fn get_biases(&self) -> Option<Matrix<f64>> { Some(self.biases.clone())}
 

@@ -1,4 +1,4 @@
-use djed_maths::linear_algebra::matrix::Matrix;
+use crate::maths::Matrix;
 
 
 pub type Activator = fn(Matrix<f64>) -> Matrix<f64>;

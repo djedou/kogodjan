@@ -1,6 +1,4 @@
-use djed_maths::linear_algebra::{
-    matrix::Matrix
-};
+use crate::maths::Matrix;
 
 use crate::loss_functions::GradFunction;
 
