@@ -13,6 +13,7 @@ pub fn data_iter(batch_size: usize, features: &Matrix<f64>, labels: &Matrix<f64>
     indices.shuffle(&mut rng);
 
     let mut result = Vec::new();
+    
     for i in (0..num_examples).into_iter().step_by(batch_size) {
         let batch_indices = indices.as_slice()[i..min(i + batch_size, num_examples)].to_vec();
 

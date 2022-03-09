@@ -1,3 +1,4 @@
+/*
 use crate::maths::Matrix;
 
 use crate::loss_functions::GradFunction;
@@ -7,3 +8,4 @@ pub fn extern_gradient(loss_grad_f: &GradFunction,  output: &mut Matrix<f64>, ta
     let loss_grad = loss_grad_f(output, target);
     Ok(loss_grad)
 }
+*/

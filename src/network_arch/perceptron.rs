@@ -1,216 +1,189 @@
-//maths::types::MatrixD,
-/*, Parameters*/
 use crate::{
-    loss_functions::{LossFunction, GradFunction},
-    utils::{data_iter/*, extern_gradient*/},
-    neural_traits::{LayerT, NetworkT},
+    //loss_functions::{LossFunction, GradFunction},
+    utils::{data_iter},
+    neural_traits::{NetworkT},
+    layers::multi_layers::{FcLayer},
+    losses::Loss
 };
 //use serde_json::{to_writer, from_reader};
 //use std::{io::BufReader, fs::File};
-use crate::maths::Matrix;
+use crate::maths::Matrix; 
+use ndarray::{Array2, Axis, ArrayBase};
+use crate::activators::{Activation};
 
-
-/*
-/// build a neural network with more layers, more neurons and fully connected  
-/// # Example
-/// ```
-/// use kongodjan::{
-///     maths::types::MatrixD,
-///     utils::{synthetic_data_mat},
-///     layers::multi_layers::FcLayer,
-///     activators::non_linear::{logsig, logsig_deriv},
-///     network_arch::PerceptronNetwork,
-///     loss_functions::{squared_loss, squared_loss_gradient},
-///     neural_traits::NetworkT,
-///     optimizers::sgd
-/// };
-///
-/// // rows are neurons and columns are inputs
-/// // 7 inputs for 3 neurons
-/// let true_w = MatrixD::<f64>::from_row_slice(3, 7, &[
-///     2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0,
-///     2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0,
-///     2.0, -3.4, 2.0, -3.4, 2.0, -3.4, 1.0
-/// ]);
-///
-/// let true_b = MatrixD::<f64>::from_row_slice(3, 1, &[
-///     2.0,
-///     -3.4,
-///     1.0
-/// ]);
-///    
-/// // the network is one layer with one neuron which receives two inputs
-/// // then features are two rows(two inputs) and more columns
-/// // labels one row and more columns
-/// let (features, labels) = synthetic_data_mat(&true_w, true_b, 1000);
-///    
-/// // build layer
-/// let (l1_n_neurons, l1_n_inputs) = (4, 7); 
-/// let (l2_n_neurons, l2_n_inputs) = (3, 4);
-/// 
-/// let layer1 = FcLayer::new(l1_n_neurons, l1_n_inputs, logsig, Some(logsig_deriv), 1);
-/// let layer2 = FcLayer::new(l2_n_neurons, l2_n_inputs, logsig, Some(logsig_deriv), 2);
-///
-/// let layers = vec![layer1, layer2];
-///
-/// // build the network
-/// let mut network = PerceptronNetwork::new(features, layers, labels);
-///
-/// // train the networ
-/// network.train(0.03, Some(10), (squared_loss, squared_loss_gradient,sgd), 20);
-///
-/// //let pred = network.predict(&test_x);
-/// //println!("output: {:?}", pred);
-/// ```
-*/
 
 
 #[derive(Debug, Clone)]
-pub struct FCNetwork<L>
-where L: LayerT + Clone
-{
-    network_db_id: String,
+pub struct FCNetwork {
+    //network_db_id: String,
     network_inputs: Matrix<f64>,
-    network_layers: Vec<L>,
-    network_outputs: Matrix<f64>
+    network_layers: Vec<FcLayer>,
+    network_outputs: Matrix<f64>,
+    loss: Loss
 }
 
-impl<L> FCNetwork<L>
-where L: LayerT + Clone
-{
-    pub fn new(network_inputs: Matrix<f64>, network_layers: Vec<L>, network_outputs: Matrix<f64>) -> FCNetwork<L> {
+
+
+
+impl FCNetwork {
+    pub fn new(network_inputs: Matrix<f64>, layers: &[(usize, Option<Activation>)], network_outputs: Matrix<f64>, loss: Loss) -> FCNetwork {
         
-        FCNetwork {
-            network_db_id: String::new(),
+        let mut fcn = FCNetwork {
+            //network_db_id: String::new(),
             network_inputs,
-            network_layers,
-            network_outputs
+            network_layers: vec![],
+            network_outputs,
+            loss
+        };
+        
+        for i in 1..layers.len() {
+            
+            let (n_inputs, _) = layers[i - 1];
+            let (n_neurons, carrunt_act) = layers[i];
+            let layer_id = i as i32;
+            fcn.network_layers.push(FcLayer::new(n_inputs, n_neurons, carrunt_act.unwrap(), layer_id));
+        }
+
+        fcn
+    }
+
+    pub fn forword_propagation(&mut self, features: &Matrix<f64>) {
+
+        let mut layer_output = features.clone();
+
+        let forwod = |input: &Matrix<f64>, layer: &mut FcLayer | -> Matrix<f64> {
+            // save input from previous layer
+            layer.inputs = Some(input.clone());
+            
+            let wp: Array2<f64> = layer.weights.get_data().dot(&input.get_data());
+            let mut wp_b: Array2<f64> = wp + layer.biases.get_data();
+            layer.net_inputs = Some(Matrix::new_from_array2(&wp_b.clone()));
+            
+            wp_b.par_mapv_inplace(|d| {layer.activator.run(d)});
+            let output = Matrix::new_from_array2(&wp_b);
+            
+            // get layer output by apply the activation function
+            layer.outputs = Some(output.clone());
+            output
+        };
+
+
+        for j in 0..self.network_layers.len(){
+            layer_output = forwod(&layer_output, &mut self.network_layers[j]);
         }
     }
 
-    /*pub fn save_parameters(&mut self) {
-        let mut paras: Vec<Parameters> = Vec::new();
-        for l in &self.network_layers {
-            if let Some(p) = l.save() {
-                paras.push(p);
-            }
-        }
+    pub fn backword_propagation(&mut self, err_deriv: &Matrix<f64>) {
 
-        to_writer(&File::create("db_params.json").unwrap(), &paras).unwrap();
+        self.network_layers.reverse();
+
+        let mut prev_gradient = err_deriv.clone();
+
+        let backword = |der: &Matrix<f64>, layer: &mut FcLayer| -> Matrix<f64> {
+            // net_inputs_deriv
+            let mut net_inputs_deriv = layer.net_inputs.clone().unwrap().get_data();
+            net_inputs_deriv.par_mapv_inplace(|d| {layer.activator.derivative(d)});
+            
+            // local gradient
+            layer.local_gradient = Some(Matrix::new_from_array2(&(der.get_data() * net_inputs_deriv.clone())));
+            
+            // gradient for previous layer
+            let weights_t = layer.weights.get_data().clone().reversed_axes();
+            let grad = weights_t.dot(&net_inputs_deriv);
+
+            Matrix::new_from_array2(&grad)
+        };
+
+        for j in 0..self.network_layers.len(){
+            prev_gradient = backword(&prev_gradient, &mut self.network_layers[j]);
+        }
+        
+        self.network_layers.reverse();
+    }
+
+    pub fn update_parameters(&mut self, lr: f64) {
+
+        for i in 0..self.network_layers.len() {
+            
+            let biases = self.network_layers[i].biases.clone().get_data();
+            let weights = self.network_layers[i].weights.clone().get_data();
+            let inputs = self.network_layers[i].inputs.clone().unwrap().get_data().reversed_axes();
+            let local_grad = self.network_layers[i].local_gradient.clone().unwrap().get_data();
+            let local_grad_b = local_grad.clone().sum_axis(Axis(1));
+            
+            let local_grad_inputs = local_grad.dot(&inputs);
+
+            let lr_arr = Array2::from_shape_fn((weights.nrows(), weights.ncols()), |_| lr);
+            let lr_arr_local_grad_inputs = lr_arr * local_grad_inputs;
+            
+            self.network_layers[i].weights = 
+                Matrix::new_from_array2(&(weights - lr_arr_local_grad_inputs)); 
+
+            // biases 
+            let mut local_grad_b_arr = local_grad_b.into_shape((biases.nrows(), 1)).unwrap();
+            local_grad_b_arr.par_mapv_inplace(|d| {d / biases.ncols() as f64});
+
+            self.network_layers[i].biases = 
+                Matrix::new_from_array2(&(biases - local_grad_b_arr)); 
+
+        }
         
     }
 
-    pub fn restore_parameters(&mut self) {  
-        if let Ok(file ) = File::open("db_params.json") {
-            let reader = BufReader::new(file);
-            
-            if let Ok(data) = from_reader::<BufReader<File>, Vec<Parameters>>(reader) {
-                for index in 0..data.len() {
-                    if let Some(layer ) = data.iter().find(|d| d.layer_id == (index as i32) + 1) {
-                        self.network_layers.iter_mut().for_each(|l| {
-                            if l.get_layer_id() == layer.layer_id {
-                                l.set_weights(layer.layer_weights.clone());
-                                l.set_biases(layer.layer_biases.clone());
-                            }
-                        });
-                    }
-                }
-            }
+    pub fn pridict(&self) {
 
-        }
     }
-
-    pub fn show_parameters(&self) {
-        for layer in &self.network_layers {
-            println!("layer_id: {} weights: {:#?}", layer.get_layer_id(), layer.get_weights());
-            println!("layer_id: {} biases: {:#?}", layer.get_layer_id(), layer.get_biases());
-        }
-    }*/
 }
 
-impl<L> NetworkT for FCNetwork<L> 
-where L: LayerT + Clone
-{
-    fn train(&mut self, lr: f64, batch_size: usize, optimizers: (LossFunction, GradFunction), epoch: i32) -> Result<(), String> {
+impl NetworkT for FCNetwork {
+    fn train(&mut self, lr: f64, batch_size: usize, epoch: i32) {
 
-        
-        let loss_f: fn(output: &Matrix<f64>, target: &Matrix<f64>) -> f64 = optimizers.0;
-        let loss_grad_f: fn(output: &Matrix<f64>, target: &Matrix<f64>) -> Matrix<f64> = optimizers.1;
         
         //let mut round: i64 = 0;
-        for _round in 0..epoch {
+        for round in 0..epoch {
             for (feature, label) in data_iter(batch_size, &self.network_inputs, &self.network_outputs) {
-                let mut input = feature.clone();
                 
-                // forword into all layers
-                for index in 0..self.network_layers.len() {
-                    let layer = &mut self.network_layers[index];
-                    input = layer.forward(&input)?;
-                }
-            
-                let cost = loss_f(&input, &label);
-                println!("error: {:#?}", cost);
-
-                let mut gradient = loss_grad_f(&input, &label);
-                
-                // backword into all layers for the last to the first
-                let indexes: Vec<_> = (0..self.network_layers.len()).into_iter().rev().collect();
-                let lastlayer_index = indexes.len() - 1;
-
-                for ind in indexes.iter() {
-                    if ind == &lastlayer_index {
-                        // prepare gradient here
-                        let layer = &mut self.network_layers[lastlayer_index];
-                        let net_input = layer.get_net_inputs().unwrap();
-                        let der = layer.get_activator_deriv().unwrap();
-                        let net_input_der = der(net_input);
-
-                        let local_gradient = net_input_der.get_data() * gradient.get_data();
-                        let local_gradient_mat = Matrix::new_from_array2(&local_gradient);
-
-                        gradient = local_gradient_mat.clone();
-
-                        layer.backward(lr, &local_gradient_mat);
-
-                    }
-                    else {
-                        // prepare gradient here
-                        let m_1_weights = &self.network_layers[*ind + 1]
-                                .get_weights()
-                                .unwrap()
-                                .get_data().reversed_axes();
-
-                        let layer = &mut self.network_layers[*ind];
-                        let net_input = layer.get_net_inputs().unwrap();
-                        let der = layer.get_activator_deriv().unwrap();
-                        let net_input_der = der(net_input);
-                        
-                        let wp = m_1_weights.dot(&gradient.get_data());
-                        let wp_grad = wp * net_input_der.get_data();
-                        
-                        let new_gradient = Matrix::new_from_array2(&wp_grad);
-
-                        gradient = new_gradient.clone();
-                        
-                        layer.backward(lr, &new_gradient);
-                    }
-
-                }
+                self.forword_propagation(&feature);
+                let output = self.network_layers.last().unwrap().outputs.clone().unwrap();
+                //let loss = self.loss.run(&output, &label);
+                //println!("Loss: {:?}", loss);
+                let err_deriv = self.loss.derivative(&output, &label);
+                self.backword_propagation(&err_deriv);
+                self.update_parameters(lr);
             } 
             
+            self.forword_propagation(&self.network_inputs.clone());
+            let output = self.network_layers.last().unwrap().outputs.clone().unwrap();
+            let loss = self.loss.run(&output, &self.network_outputs);
+            println!("Epoch: {:?} Loss: {:?}", round, loss);
+            println!(" ");
+            let err_deriv = self.loss.derivative(&output, &self.network_outputs);
+            self.backword_propagation(&err_deriv);
+            self.update_parameters(lr);
+            
         }
-        Ok(())
+        
     }
 
-    fn predict(&mut self, input: &Matrix<f64>) -> Result<Matrix<f64>, String> {
-        let mut inputs = input.clone();
-                
-        // forword into all layers
-        for index in 0..self.network_layers.len() {
-            let layer = &mut self.network_layers[index];
-            inputs = layer.forward(&inputs)?;
-        }
+    fn predict(&mut self, input: &[f64]) -> Matrix<f64> {
 
-        Ok(inputs)
+        let input = ArrayBase::from_vec(input.to_vec()).into_shape((input.len(), 1)).unwrap();
+        self.forword_propagation(&Matrix::new_from_array2(&input));
+
+        Matrix::new_from_array2(
+            &ArrayBase::from_vec(
+                self.network_layers
+                .last()
+                .unwrap()
+                .outputs
+                .clone()
+                .unwrap()
+                .get_data()
+                .column(0)
+                .to_vec())
+            .into_shape((10, 24))
+            .unwrap()
+        )
     }
+
 }

@@ -4,7 +4,7 @@ use ndarray::{Array2, arr2, FixedInitializer};
 #[derive(Debug, Clone)]
 pub struct Matrix<A>
 where 
-    A: Clone
+    A: Clone + Copy
 {
     nrows: usize,
     ncols: usize,
@@ -14,7 +14,7 @@ where
 
 impl<A> Matrix<A> 
 where 
-    A: Clone
+    A: Clone + Copy
 {
     pub fn new<V: FixedInitializer<Elem = A>>(xs: &[V]) -> Matrix<A>
     where
