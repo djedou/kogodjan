@@ -23,7 +23,72 @@ pub struct FCNetwork {
 }
 
 
-
+///
+/// use ndarray::{Array2, Array};
+/// use data::LottoClient;
+/// use kongodjan::{
+///    maths::Matrix,
+///    network_arch::FCNetwork,
+///    neural_traits::NetworkT,
+///    activators::{Activation},
+///    losses::Loss
+/// };
+///
+///
+/// fn main() {
+///    // prepare data
+///    let mut client = LottoClient::new();
+///    
+///    let (features, labels) = client.get_friday();
+///
+///    
+///    let size = features.len();
+///    let feat_nrows = features[0].len();
+///    let lab_nrows = labels[0].len();
+///    
+///    let mut feat = Array2::zeros((feat_nrows, 0));
+///    let mut lab = Array2::zeros((lab_nrows, 0));
+///    
+///    (0..size).into_iter().for_each(|a| {
+///        feat.push_column(Array::from_vec(features[a].clone()).view()).unwrap();
+///        lab.push_column(Array::from_vec(labels[a].clone()).view()).unwrap();
+///    });
+///    
+///    let new_features = Matrix::new_from_array2(&feat);
+///    let new_labels = Matrix::new_from_array2(&lab);
+///
+///    // build layers
+///    let network_input = new_features.get_nrows();
+///    let network_output_neurons = new_labels.get_nrows(); 
+///    let hidden_layer_neurons = (((network_input + network_output_neurons) * 2) / 3) + 8;
+///
+///    // build the network
+///    let mut network = FCNetwork::new(
+///        new_features, 
+///        &[
+///            (network_input, None), 
+///            (hidden_layer_neurons, Some(Activation::Sigmoid)), 
+///            (hidden_layer_neurons, Some(Activation::Sigmoid)), 
+///            (hidden_layer_neurons, Some(Activation::Sigmoid)), 
+///            (network_output_neurons, Some(Activation::Sigmoid))
+///        ],
+///        new_labels,
+///        Loss::Squared
+///    );
+///    
+///    // train the networ
+///    let batch_size: usize = 8;
+///    let epoch = 500;
+///    network.train(0.0003, batch_size, epoch); 
+///    //192	monday special	27	4	2009	73	53	49	24	20	65	21	11	68	23
+///    //193	monday special	4	5	2009	32	49	84	85	78	2	76	24	31	47
+///
+///    let pred_data = client.get_predict_input(&[73, 53, 49, 24, 20, 65, 21, 11, 68, 23]);
+///    println!("test input: {:?}", pred_data);
+///    let predicted = network.predict(&pred_data);
+///    println!("tes output: {:?}", predicted.get_data());
+///}
+///
 
 impl FCNetwork {
     pub fn new(network_inputs: Matrix<f64>, layers: &[(usize, Option<Activation>)], network_outputs: Matrix<f64>, loss: Loss) -> FCNetwork {
@@ -123,8 +188,10 @@ impl FCNetwork {
             let mut local_grad_b_arr = local_grad_b.into_shape((biases.nrows(), 1)).unwrap();
             local_grad_b_arr.par_mapv_inplace(|d| {d / biases.ncols() as f64});
 
+            let lr_arr_b = Array2::from_shape_fn((biases.nrows(), 1), |_| lr);
+            let lr_arr_b_local_grad_b_arr = lr_arr_b * local_grad_b_arr;
             self.network_layers[i].biases = 
-                Matrix::new_from_array2(&(biases - local_grad_b_arr)); 
+                Matrix::new_from_array2(&(biases - lr_arr_b_local_grad_b_arr)); 
 
         }
         

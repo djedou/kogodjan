@@ -26,7 +26,7 @@ impl Loss {
             for i in 0..targ.len() {
                 sum += (targ[i] - out[i]).exp2();
             }
-            sum
+            sum / targ.len() as f64
         };
         
         for i in 0..target.get_ncols() {
@@ -46,7 +46,7 @@ impl Loss {
     
     fn squared_loss_derivative(&self, output: &Matrix<f64>, target: &Matrix<f64>) -> Matrix<f64> {
         let res = target.get_data() - output.get_data();
-        let menos_two = Array2::from_shape_fn((target.get_nrows(), target.get_ncols()), |_| -2.0);
+        let menos_two = Array2::from_shape_fn((target.get_nrows(), target.get_ncols()), |_| 2.0);
         
         Matrix::new_from_array2(&(menos_two * res))
     }
