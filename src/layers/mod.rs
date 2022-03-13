@@ -1,2 +1,3 @@
-//pub mod single_layer;
-pub mod multi_layers;
+mod full_connected_layer;
+
+pub use full_connected_layer::*;

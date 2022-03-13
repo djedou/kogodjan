@@ -1,13 +1,12 @@
 use random_number::rand::{thread_rng, seq::SliceRandom};
-use crate::maths::Matrix;
 use std::cmp::min;
 use ndarray::{Array2};
 
-pub fn data_iter(batch_size: usize, features: &Matrix<f64>, labels: &Matrix<f64>) -> Vec<(Matrix<f64>, Matrix<f64>)> {
+pub fn data_iter(batch_size: usize, features: &Array2<f64>, labels: &Array2<f64>) -> Vec<(Array2<f64>, Array2<f64>)> {
     let mut rng = thread_rng();
-    let num_examples = features.get_ncols();
-    let features_rows = features.get_nrows();
-    let labels_rows = labels.get_nrows();
+    let num_examples = features.ncols();
+    let features_rows = features.nrows();
+    let labels_rows = labels.nrows();
 
     let mut indices: Vec<_> = (0..num_examples).into_iter().collect();
     indices.shuffle(&mut rng);
@@ -21,12 +20,12 @@ pub fn data_iter(batch_size: usize, features: &Matrix<f64>, labels: &Matrix<f64>
         let mut lab = Array2::zeros((labels_rows, 0));
 
         batch_indices.iter().for_each(|a| {
-            feat.push_column(features.get_data().column(*a)).unwrap();
-            lab.push_column(labels.get_data().column(*a)).unwrap();
+            feat.push_column(features.column(*a)).unwrap();
+            lab.push_column(labels.column(*a)).unwrap();
         });
         
-        let new_features = Matrix::new_from_array2(&feat);
-        let new_labels = Matrix::new_from_array2(&lab);
+        let new_features = feat;
+        let new_labels = lab;
         
         result.push((new_features, new_labels));
 
