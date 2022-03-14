@@ -77,16 +77,16 @@ use crate::activators::{Activation};
 #[derive(Debug, Clone)]
 pub struct FCNetwork {
     //network_db_id: String,
-    network_inputs: Array2<f64>,
+    network_inputs: Vec<Array2<f64>>,
     network_layers: Vec<FcLayer>,
-    network_outputs: Array2<f64>,
+    network_outputs: Vec<Array2<f64>>,
     loss: Loss,
     network_erros: Vec<f64>
 }
 
 
 impl FCNetwork {
-    pub fn new(network_inputs: Array2<f64>, layers: &[(usize, Option<Activation>)], network_outputs: Array2<f64>, loss: Loss) -> FCNetwork {
+    pub fn new(network_inputs: Vec<Array2<f64>>, layers: &[(usize, Option<Activation>)], network_outputs: Vec<Array2<f64>>, loss: Loss) -> FCNetwork {
         
         let mut fcn = FCNetwork {
             //network_db_id: String::new(),
@@ -118,48 +118,49 @@ impl FCNetwork {
 impl NetworkT for FCNetwork {
     fn train(&mut self, lr: f64, batch_size: usize, epoch: i32) {
         //let mut round: i64 = 0;
-        for _round in 0..epoch {
+        for round in 0..epoch {
             for (feature, label) in data_iter(batch_size, &self.network_inputs, &self.network_outputs) {
-                
-                self.forword_propagation(&feature);
-                let output = self.network_layers.last().unwrap().outputs.clone().unwrap();
-                let err_deriv = self.loss.derivative(&output, &label);
-                self.backword_propagation(&err_deriv);
+                self.forword_propagation(feature);
+                let output_layer = self.network_layers.last().unwrap();
+                let err_deriv = self.loss.derivative(output_layer.outputs.clone().unwrap(), &label);
+                self.backword_propagation(err_deriv);
                 self.update_parameters(lr);
             } 
             
-            self.forword_propagation(&self.network_inputs.clone());
+            self.forword_propagation(self.network_inputs.clone());
             let output = self.network_layers.last().unwrap().outputs.clone().unwrap();
-            self.network_erros = self.loss.run(&output, &self.network_outputs);
-            let err_deriv = self.loss.derivative(&output, &self.network_outputs);
-            self.backword_propagation(&err_deriv);
+            //self.network_erros = self.loss.run(&output, &self.network_outputs);
+            let network_erros = self.loss.run(&output, &self.network_outputs);
+            println!("Epoch: {:?} Errors: {:?}", round, network_erros);
+            let err_deriv = self.loss.derivative(output, &self.network_outputs);
+            self.backword_propagation(err_deriv);
             self.update_parameters(lr);
         }
     }
 
-    fn forword_propagation(&mut self, features: &Array2<f64>) {
+    fn forword_propagation(&mut self, features: Vec<Array2<f64>>) {
         let mut layer_output = features.clone();
 
         for j in 0..self.network_layers.len(){
-            layer_output = self.network_layers[j].forword(&layer_output);
+            layer_output = self.network_layers[j].forword(layer_output);
         }
     }
 
-    fn predict_forword_propagation(&mut self, features: &Array2<f64>) {
+    fn predict_forword_propagation(&mut self, features: Vec<Array2<f64>>) {
         let mut layer_output = features.clone();
 
         for j in 0..self.network_layers.len(){
-            layer_output = self.network_layers[j].predict_forword(&layer_output);
+            layer_output = self.network_layers[j].predict_forword(layer_output);
         }
     }
 
-    fn backword_propagation(&mut self, gradient: &Array2<f64>) {
+    fn backword_propagation(&mut self, gradient: Vec<Array2<f64>>) {
 
         self.network_layers.reverse();
         let mut prev_gradient = gradient.clone();
 
         for j in 0..self.network_layers.len(){
-            prev_gradient = self.network_layers[j].backword(&prev_gradient);
+            prev_gradient = self.network_layers[j].backword(prev_gradient);
         }
         
         self.network_layers.reverse();
@@ -172,7 +173,7 @@ impl NetworkT for FCNetwork {
         }
     }
 
-    fn network_outpout(&self) -> Array2<f64> {
+    fn network_outpout(&self) -> Vec<Array2<f64>> {
 
         self.network_layers
             .last()
@@ -182,9 +183,9 @@ impl NetworkT for FCNetwork {
             .unwrap()
     }
 
-    fn predict(&mut self, input: &[f64]) -> Array2<f64> {
+    fn predict(&mut self, input: &[f64]) -> Vec<Array2<f64>> {
         let input = ArrayBase::from_vec(input.to_vec()).into_shape((input.len(), 1)).unwrap();
-        self.predict_forword_propagation(&input);
+        self.predict_forword_propagation(vec![input]);
 
         self.network_layers
             .last()

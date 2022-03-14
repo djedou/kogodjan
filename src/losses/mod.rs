@@ -15,7 +15,7 @@ pub enum Loss {
 }
 
 impl Loss {
-    pub fn run(&self, output: &Array2<f64>, target: &Array2<f64>) -> Vec<f64> {
+    pub fn run(&self, output: &[Array2<f64>], target: &[Array2<f64>]) -> Vec<f64> {
         return match self {
             Self::Mse => mse_loss(&output, &target),
             BinaryCrossEntropy => binary_cross_entropy_loss(&output, &target)
@@ -23,10 +23,10 @@ impl Loss {
         
     }
     
-    pub fn derivative(&self, output: &Array2<f64>, target: &Array2<f64>) -> Array2<f64> {
+    pub fn derivative(&self, outputs: Vec<Array2<f64>>, targets: &[Array2<f64>]) -> Vec<Array2<f64>> {
         return match self {
-            Self::Mse => mse_derivative(&output, &target),
-            BinaryCrossEntropy => binary_cross_entropy_derivative(&output, &target)
+            Self::Mse => mse_derivative(&outputs, &targets),
+            BinaryCrossEntropy => binary_cross_entropy_derivative(&outputs, &targets)
         };
     }
 }
