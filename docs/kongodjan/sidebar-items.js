@@ -1,1 +1,0 @@
-initSidebarItems({"mod":[["activations",""],["architectures",""],["errors",""],["networks",""],["neural_traits",""]]});

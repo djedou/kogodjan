@@ -1,16 +1,7 @@
-[package]
-name = "kongodjan"
-version = "0.1.0"
-authors = ["djedou"]
-edition = "2018"
+[workspace]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-random-number = "0.1.6"
-jfs = "0.6.2"
-serde = { version = "1.0.117", features = ["derive"] }
-serde_derive = "1.0.117"
-serde_json = "1.0.59"
-rand = "0.8.4"
-ndarray = { version = "0.15.3", features = ["rayon"] }
+members = [
+    "auto_diff",
+    "neural_network",
+    "gui"
+]

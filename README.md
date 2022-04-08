@@ -1,3 +1,3 @@
 # kongodjan
-A Deep Learning Library in Rust  
+A Deep Learning Framework in Rust  
 # [Documentation](https://djedou.github.io/kongodjan/kongodjan/)
