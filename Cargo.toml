@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-    "auto_diff",
+    "algo_diff",
     "neural_network",
     "gui"
 ]

@@ -1,8 +1,10 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
+mod activator;
+mod loss;
+mod utils;
+
+pub mod layers;
+pub mod networks;
+pub mod io;
+pub use algo_diff::maths::{Matrix, Array};
+pub use loss::*;
+pub use activator::*;
