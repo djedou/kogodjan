@@ -3,7 +3,7 @@ use crate::{
         GraphBuilder,
         Graph,
     },
-    maths::{Matrix},
+    maths::{Matrix, tanh, pow2},
 
 };
 use std::fmt::Debug;
@@ -52,19 +52,21 @@ impl Graph for TanhGraph {
 
 
 
-    fn forward(&mut self, _inputs: Self::Input) -> Self::Output {
-        /*
-        let op = self.steps.get_mut(&1).unwrap();
-        op.forward(&[inputs.clone()]);
-        let value = op.get_value();
-        self.gradients = get_sigmoid_deriv(&value.clone());
+    fn forward(&mut self, inputs: Self::Input) -> Self::Output {
+        let mut value = inputs.clone();
+        value.mapv_inplace(|x| tanh(x));
+        
+        let mut value_pow2 = value.clone();
+        value_pow2.mapv_inplace(|x| pow2(x));
+        let deriv = 1.0 - value_pow2;
+        
+        self.gradients = deriv;
+
         value
-        */
-        Matrix::zeros((1,1))
     }
 
-    fn backward(&mut self, _gradient: Option<Matrix>) -> Self::Gradient {
-        /*match gradient {
+    fn backward(&mut self, gradient: Option<Matrix>) -> Self::Gradient {
+        match gradient {
             Some(grad) => {
                 let new_grad = self.gradients.clone() * grad;
                 Some(new_grad)
@@ -72,8 +74,11 @@ impl Graph for TanhGraph {
             None => {
                 Some(self.gradients.clone())
             }
-        }*/
-        Some(self.gradients.clone())
+        }
+    }
+
+    fn backward_with_more_gradients(&mut self, _gradients: Option<&[Matrix]>) -> Self::Gradient {
+        None
     }
 
     fn set_builder(&mut self, _builder: GraphBuilder) {}

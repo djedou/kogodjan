@@ -12,3 +12,10 @@ serde_derive = "1.0.0"
 rand = { version = "0.8.5", features = ["serde1"] }
 postgres = "0.19.1"
 jfs = "0.7.1"
+
+
+
+[[test]]
+name = "integration"
+path = "integration/main.rs"
+harness = false

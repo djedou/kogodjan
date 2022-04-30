@@ -91,6 +91,9 @@ impl Graph for MseGraph {
             }
         }
     }
+    fn backward_with_more_gradients(&mut self, _gradients: Option<&[Matrix]>) -> Self::Gradient {
+        None
+    }
 
     fn set_builder(&mut self, _builder: GraphBuilder) {}
 }

@@ -17,6 +17,7 @@ pub trait Graph: Debug {
 
     fn forward(&mut self, input: Self::Input) -> Self::Output;
     fn backward(&mut self, gradient: Option<Matrix>) -> Self::Gradient;
+    fn backward_with_more_gradients(&mut self, gradients: Option<&[Matrix]>) -> Self::Gradient;
     fn set_builder(&mut self, builder: GraphBuilder);
 }
 

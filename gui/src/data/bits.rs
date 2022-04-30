@@ -2,17 +2,17 @@
 
 
 
-pub struct Bits;
+pub struct _Bits;
 
-impl Bits {
-    pub fn bits_into_integer(bits: &[u8]) -> u8 {
+impl _Bits {
+    pub fn _bits_into_integer(bits: &[u8]) -> u8 {
         bits.iter()
             .fold(0, |result, &bit| {
                 (result << 1) ^ bit
             })
     }
     
-    pub fn float_into_bits(ch: &[f64]) -> Vec<u8> {
+    pub fn _float_into_bits(ch: &[f64]) -> Vec<u8> {
         let mut ch_bits = vec![];
         for c in ch {
             if *c > 0.49 {
@@ -25,7 +25,7 @@ impl Bits {
         ch_bits
     }
 
-    pub fn int_into_bits(data: i32) -> Vec<f64> {
+    pub fn _int_into_bits(data: i32) -> Vec<f64> {
         let mut bit_res: Vec<f64> = vec![];
 
         for i in format!("{:07b}", data).chars() {

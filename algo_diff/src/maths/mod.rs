@@ -47,6 +47,15 @@ pub fn pow2(x: f64) -> f64 {
     x.powi(2)
 }
 
+pub fn softmax(inputs: &[f64]) -> Vec<f64> {
+    let inputs_clone = inputs.clone();
+
+    let inputs_exp: Vec<f64> = inputs.iter().map(|i| exp(*i)).collect();
+    let inputs_exp_sum: f64 = inputs_exp.iter().sum();
+
+    inputs_clone.iter().map(|i| exp(*i) / inputs_exp_sum).collect()
+}
+
 pub fn softmax_exp_sum(xs: &[f64], max: f64) -> f64 {
     let mut xs = xs;
     let mut s = 0.;

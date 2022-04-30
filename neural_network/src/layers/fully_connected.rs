@@ -45,14 +45,12 @@ impl FcLayer {
             Activator::Tanh => Box::new(TanhGraph::new())
         };
 
-        let weights = Matrix::from_shape_fn((n_inputs, n_neurons), |_| 2f64 * random::<f64>() - 1f64);
+        let weights = Matrix::from_shape_fn((n_neurons, n_inputs), |_| 2f64 * random::<f64>() - 1f64);
         let biases = Matrix::from_shape_fn((n_neurons, 1), |_| 2f64 * random::<f64>() - 1f64);
 
         FcLayer {
             weights, //: uniform(n_inputs, n_neurons, min, max, rng),
             biases, //: uniform(n_neurons, 1 , min, max, rng),
-            //weights_m: None,
-            //biases_m: None,
             activator: act,
             activator_enum: activator,
             linear: Box::new(LinearGraph::new()),
@@ -67,7 +65,7 @@ impl FcLayer {
         for _ in 0..input_ncols {
             new_biases.push_column(self.biases.column(0)).unwrap();
         }
-        let linear_output = self.linear.forward([self.weights.clone().reversed_axes(), inputs, new_biases]);
+        let linear_output = self.linear.forward([self.weights.clone(), inputs, new_biases]);
         self.activator.forward(linear_output)
     }
     
@@ -79,31 +77,8 @@ impl FcLayer {
     }
 
     pub fn update_parameters(&mut self, lr: f64, _momemtum: f64) {
-        // update weights
-        /*
-        let weights_m = if let Some(w_m) = self.weights_m.clone() {
-                            (momemtum * w_m) - (lr * self.gradients[0].clone().reversed_axes())
-                        }
-                        else {
-                            - (lr * self.gradients[0].clone().reversed_axes())
-                        };
-        self.weights = self.weights.clone() + weights_m.clone(); // - (lr * self.gradients[0].clone().reversed_axes());
-        self.weights_m = Some(weights_m);
-        */
-        self.weights = self.weights.clone() - (lr * self.gradients[0].clone().reversed_axes());
+        self.weights = self.weights.clone() - (lr * self.gradients[0].clone());
 
-        // update biases
-        /*
-        let biases_deriv = self.gradients[1].sum_axis(Axis(1)).into_shape((self.biases.nrows(), 1)).unwrap();
-        let biases_m = if let Some(b_m) = self.biases_m.clone() {
-                            (momemtum * b_m) - (lr * biases_deriv)
-                        }
-                        else {
-                            - (lr * biases_deriv)
-                        };
-        self.biases = self.biases.clone() + biases_m.clone();
-        self.biases_m = Some(biases_m);
-        */
         let biases_deriv = self.gradients[1].mean_axis(Axis(1)).unwrap().into_shape((self.biases.nrows(), 1)).unwrap();
         self.biases = self.biases.clone() - biases_deriv.clone();
     }

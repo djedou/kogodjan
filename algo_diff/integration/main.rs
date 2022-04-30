@@ -4,7 +4,7 @@ use algo_diff::{
 };
 
 fn forward_backward() {
-    
+    /*
     // Forward 
     // Step 1: WX + B
     let mut linear_graph = LinearGraph::new();
@@ -43,6 +43,7 @@ fn forward_backward() {
     println!("inputs: {:#?}", x);
     println!("Gradients: {:#?}", wx_b_d);
     println!(" ");
+    */
 }
 
 

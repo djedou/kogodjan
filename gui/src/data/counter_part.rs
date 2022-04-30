@@ -1,13 +1,13 @@
 use neural_network::{Matrix};
-use super::{LottoClient, CounterData, Bits};
-use std::collections::{HashMap};
+use super::{LottoClient};
+use std::cmp::Ordering;
 pub struct Encoding;
 
 
 impl Encoding {
     pub fn new() -> Self {Encoding}
 
-    pub fn positional_encoding(position: f64, dimension: usize, pe: &mut [f64]) {
+    pub fn _positional_encoding(position: f64, dimension: usize, pe: &mut [f64]) {
         for i in 0..dimension {
             let ex = ((2 * i) / dimension) as f64;
             let h: f64 = 100.;
@@ -17,26 +17,24 @@ impl Encoding {
         }
     }
 
-    pub fn get_lotto_days_data(&mut self, days: &[&str]) -> Vec<(Matrix, Matrix)> {
-        let mut client = LottoClient::new();
+    pub fn get_lotto_days_data(&mut self, days: &[&str]) -> Vec<(Matrix, Vec<Matrix>)> {
 
-        let mut data: Vec<(Matrix, Matrix)> = vec![];
-        let counter = client.get_counter_data("counterpart");
+        let mut data: Vec<(Matrix, Vec<Matrix>)> = vec![];
 
         for day in days {
-            let mut res = self.get_one_day_data(day, &counter);
+            let mut res = self.get_one_day_data(day);
             data.append(&mut res);
         }
 
         data
     }
 
-    pub fn get_one_day_data(&mut self, day: &str, counter: &HashMap<i32, CounterData>) -> Vec<(Matrix, Matrix)> {
+    pub fn get_one_day_data(&mut self, day: &str) -> Vec<(Matrix, Vec<Matrix>)> {
         let mut client = LottoClient::new();
         
         let data = client.get_game_data(day);
 
-        let mut features_labels: Vec<(Matrix, Matrix)> = Vec::new();
+        let mut features_labels: Vec<(Matrix, Vec<Matrix>)> = Vec::new();
 
         let data_len = data.len();
         for n in 1..data_len  {
@@ -48,140 +46,61 @@ impl Encoding {
             let output_event = data.get(&((n + 1) as i32));
             if let Some(input) = input_event {
                 if let Some(output) = output_event {
-                    let input_vec = self.get_row_bits(&[input.w_1, input.w_2, input.w_3, input.w_4, input.w_5, input.m_1, input.m_2, input.m_3, input.m_4, input.m_5], &counter);
-                    let input_matrix = Matrix::from_shape_vec((input_vec.len(), 1), input_vec).unwrap();
+                    let input_mat = self.get_row_bits_for_featurs(&[input.w_1, input.w_2, input.w_3, input.w_4, input.w_5, input.m_1, input.m_2, input.m_3, input.m_4, input.m_5]);
                     
-                    let output_vec = self.get_row_bits(&[output.w_1, output.w_2, output.w_3, output.w_4, output.w_5, output.m_1, output.m_2, output.m_3, output.m_4, output.m_5], &counter);
-                    let outputs = Matrix::from_shape_vec((output_vec.len(), 1), output_vec).unwrap();
                     
-                    features_labels.push((input_matrix, outputs));
+                    let output_mat = self.get_row_bits_for_label(&[output.w_1, output.w_2, output.w_3, output.w_4, output.w_5, output.m_1, output.m_2, output.m_3, output.m_4, output.m_5]);
+
+                    features_labels.push((input_mat, output_mat));
                 }
             }
         }
 
         features_labels
     }
-    
-    pub fn get_row_bits(&self, row: &[i32], counter: &HashMap<i32, CounterData>) -> Vec<f64> {
-        
-        let mut res: Vec<f64> = vec![];
+
+    pub fn get_row_bits_for_featurs(&self, row: &[i32]) -> Matrix {
+
+        let mut values: [f64; 90] = [0.; 90];
         
         for (_i,n) in row.iter().enumerate() {
-
-            let mut values: [i32; 9] = [0; 9];
-            if let Some(CounterData{number, counter, bonanza, stringkey, turning, melta, partner, equivalent, shadow, code}) = counter.get(&n) {
-                if *number <= 90 && *number >= 1 {}
-                if *counter <= 90 && *counter >= 1 {
-                    values[0] = *counter;
-                }
-                if *bonanza <= 90 && *bonanza >= 1 {
-                    values[1] = *bonanza;
-                }
-                if *stringkey <= 90 && *stringkey >= 1 {
-                    values[2] = *stringkey;
-                }
-                if *turning <= 90 && *turning >= 1 {
-                    values[3] = *turning;
-                }
-                if *melta <= 90 && *melta >= 1 {
-                    values[4] = *melta;
-                }
-                if *partner <= 90 && *partner >= 1 {
-                    values[5] = *partner;
-                }
-                if *equivalent <= 90 && *equivalent >= 1 {
-                    values[6] = *equivalent;
-                }
-                if *shadow <= 90 && *shadow >= 1 {
-                    values[7] = *shadow;
-                }
-                if *code <= 90 && *code >= 1 {
-                    values[8] = *code;
-                }
-            }
-            
-            for r in values {
-                res.extend_from_slice(&Bits::int_into_bits(r));
-            }
+            values[(n - 1) as usize] = 1.0;
         }
-
-        res
+        Matrix::from_shape_vec((values.len(), 1), values.to_vec()).unwrap()
     }
 
-    pub fn into_result(&mut self, row: &[f64], counter: &HashMap<i32, CounterData>) -> Vec<i32> {
+    pub fn get_row_bits_for_label(&self, row: &[i32]) -> Vec<Matrix> {
 
-        let mut chuncks: Vec<Vec<f64>> = vec![];
-        for r in row.chunks(63) {
-            chuncks.push(r.into());
+        let mut values: Vec<Matrix> = vec![];
+        
+        for (_i,n) in row.iter().enumerate() {
+            let mut res: [f64; 90] = [0.; 90];
+            res[(n - 1) as usize] = 1.0;
+            values.push(Matrix::from_shape_vec((res.len(), 1), res.to_vec()).unwrap());
         }
+
+        values
+    }
+
+    pub fn into_result(&self, outputs: &[Matrix]) -> Vec<i32> {
 
         let mut res: Vec<i32> = vec![];
-        for (i, v) in chuncks.iter().enumerate() {
-            let mut chcks: Vec<i32> = vec![];
-            for r in v.chunks(7) {
-                let m_bits = Bits::float_into_bits(r);
-                let m = Bits::bits_into_integer(&m_bits) as i32;
-                chcks.push(m);
-            }
-            let win = self.winner(i, &chcks, &counter);
-            res.push(win);
+        
+        for o in outputs {
+            let o_vec = o.column(0).to_vec();
+            res.push(self.get_max_index(&o_vec));
         }
-
         res
     }
 
-    
-    fn winner(&mut self, index: usize, candidate: &[i32], counter: &HashMap<i32, CounterData>) -> i32 {
+    fn get_max_index(&self, nets: &[f64]) -> i32 {
         
-        let mut win = 0;
-        let mut wins = vec![];
-        for (_, c) in counter {
-            let mut score = 0;
-            let CounterData{number, counter, bonanza, stringkey, turning, melta, partner, equivalent, shadow, code} = c;
-            // Counter
-            if candidate[0] == *counter {
-                score = score + 1;
-            }
-            // Bonanza
-            if candidate[1] == *bonanza  {
-                score = score + 1;
-            }
-            // Stringkey
-            if candidate[2] == *stringkey  {
-                score = score + 1;
-            }
-            // Turning
-            if candidate[3] == *turning  {
-                score = score + 1;
-            }
-            // Melta
-            if candidate[4] == *melta  {
-                score = score + 1;
-            }
-            // Partner
-            if candidate[5] == *partner  {
-                score = score + 1;
-            }
-            // Equivalent
-            if candidate[6] == *equivalent  {
-                score = score + 1;
-            }
-            // Shadow
-            if candidate[7] == *shadow  {
-                score = score + 1;
-            }
-            // Code
-            if candidate[8] == *code  {
-                score = score + 1;
-            }
+        let index_of_max: Option<usize> = nets
+            .iter()
+            .enumerate()
+            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(Ordering::Equal))
+            .map(|(index, _)| index);
 
-            if score >= 2 {
-                wins.push(number);
-                win = *number;
-            }
-        }
-        println!("candiates: {:?} => {:?}", index + 1, wins);
-
-        win
+        index_of_max.unwrap() as i32 + 1
     }
 }

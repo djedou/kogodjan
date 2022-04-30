@@ -1,8 +1,10 @@
 mod feed_forward;
+mod lstm;
 
 
 pub use feed_forward::*;
 use algo_diff::maths::Matrix;
+pub use lstm::*;
 
 
 pub trait NetworkT {
