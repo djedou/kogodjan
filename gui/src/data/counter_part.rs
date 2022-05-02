@@ -48,7 +48,6 @@ impl Encoding {
                 if let Some(output) = output_event {
                     let input_mat = self.get_row_bits_for_featurs(&[input.w_1, input.w_2, input.w_3, input.w_4, input.w_5, input.m_1, input.m_2, input.m_3, input.m_4, input.m_5]);
                     
-                    
                     let output_mat = self.get_row_bits_for_label(&[output.w_1, output.w_2, output.w_3, output.w_4, output.w_5, output.m_1, output.m_2, output.m_3, output.m_4, output.m_5]);
 
                     features_labels.push((input_mat, output_mat));

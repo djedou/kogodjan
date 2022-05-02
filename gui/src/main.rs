@@ -72,13 +72,13 @@ fn main() {
     // ####### Prediction Start ##################
     //let inputs = vec![74, 82, 26, 67, 33, 42, 78, 37, 75, 44]; // monday,  win 32 39 33 11 26 Mac 19 58 57 21 31
     //let inputs = [57, 27, 1, 48, 78, 11, 21, 64, 49, 81]; // friday, win 79 61 23 39 64 Mac 11 74 62 51 81
-    let inputs = [89, 48, 33, 71, 64, 30, 17, 53, 20, 9]; // tuesday, win 68 47 25 40 36 Mac 86 61 56 1 78
+    //let inputs = [89, 48, 33, 71, 64, 30, 17, 53, 20, 9]; // tuesday, win 68 47 25 40 36 Mac 86 61 56 1 78
     //let inputs = [77, 23, 89, 90, 59, 58, 15, 29, 24, 87]; // tuesday_night,  win 49 60 17 28 55 Mac 86 13 5 27 87
     // ####### Not in training ####################
     //let inputs = [62, 80, 15, 41, 42, 65, 72, 34, 16, 18]; // friday, win 65 84 25 2 19 Mac 5 67 59 3 39
     //let inputs = [59, 51, 85, 64, 88, 2, 72, 12, 27, 16]; // friday, win 87 18 81 2 76 Mac 62 19 8 25 84
     // ###### End Of Not in training #############
-    
+    let inputs = [90, 61, 80, 72, 84, 16, 11, 2, 23, 10]; // friday, win
     predict_for_all(&inputs, path, dir);
     // ####### Prediction End ##################
 }
