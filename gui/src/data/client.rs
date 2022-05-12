@@ -54,7 +54,7 @@ impl LottoClient {
         }
     }
 
-    pub fn _get_counter_data(&mut self, counter: &str) -> HashMap<i32 ,CounterData> {
+    pub fn get_counter_data(&mut self, counter: &str) -> HashMap<i32 ,CounterData> {
     
         let query = format!("SELECT * FROM lotto.{:?}", counter);
     

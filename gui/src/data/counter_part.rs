@@ -1,8 +1,8 @@
 use neural_network::{Matrix};
-use super::{LottoClient};
+use super::{LottoClient, CounterData};
 use std::cmp::Ordering;
 pub struct Encoding;
-
+use std::collections::HashMap;
 
 impl Encoding {
     pub fn new() -> Self {Encoding}
@@ -17,19 +17,32 @@ impl Encoding {
         }
     }
 
-    pub fn get_lotto_days_data(&mut self, days: &[&str]) -> Vec<(Matrix, Vec<Matrix>)> {
+    pub fn get_lotto_days_data_winners(&mut self, days: &[&str]) -> Vec<(Matrix, Vec<Matrix>)> {
 
         let mut data: Vec<(Matrix, Vec<Matrix>)> = vec![];
 
         for day in days {
-            let mut res = self.get_one_day_data(day);
+            let mut res = self.get_one_day_data_winners(day);
             data.append(&mut res);
         }
 
         data
     }
 
-    pub fn get_one_day_data(&mut self, day: &str) -> Vec<(Matrix, Vec<Matrix>)> {
+    pub fn get_lotto_days_data_counterparts(&mut self, days: &[&str]) -> Vec<(Matrix, Vec<Matrix>)> {
+
+        let mut data: Vec<(Matrix, Vec<Matrix>)> = vec![];
+        let counter = LottoClient::new().get_counter_data("counterpart");
+
+        for day in days {
+            let mut res = self.get_one_day_data_counterparts(day, &counter);
+            data.append(&mut res);
+        }
+
+        data
+    }
+
+    pub fn get_one_day_data_winners(&mut self, day: &str) -> Vec<(Matrix, Vec<Matrix>)> {
         let mut client = LottoClient::new();
         
         let data = client.get_game_data(day);
@@ -46,7 +59,7 @@ impl Encoding {
             let output_event = data.get(&((n + 1) as i32));
             if let Some(input) = input_event {
                 if let Some(output) = output_event {
-                    let input_mat = self.get_row_bits_for_featurs(&[input.w_1, input.w_2, input.w_3, input.w_4, input.w_5, input.m_1, input.m_2, input.m_3, input.m_4, input.m_5]);
+                    let input_mat = self.get_row_bits_for_features_winners(&[input.w_1, input.w_2, input.w_3, input.w_4, input.w_5, input.m_1, input.m_2, input.m_3, input.m_4, input.m_5]);
                     
                     let output_mat = self.get_row_bits_for_label(&[output.w_1, output.w_2, output.w_3, output.w_4, output.w_5, output.m_1, output.m_2, output.m_3, output.m_4, output.m_5]);
 
@@ -58,12 +71,81 @@ impl Encoding {
         features_labels
     }
 
-    pub fn get_row_bits_for_featurs(&self, row: &[i32]) -> Matrix {
+    pub fn get_one_day_data_counterparts(&mut self, day: &str, counter: &HashMap<i32, CounterData>) -> Vec<(Matrix, Vec<Matrix>)> {
+        let mut client = LottoClient::new();
+        
+        let data = client.get_game_data(day);
+
+        let mut features_labels: Vec<(Matrix, Vec<Matrix>)> = Vec::new();
+
+        let data_len = data.len();
+        for n in 1..data_len  {
+            if n == data_len {
+                break;
+            }
+            
+            let input_event = data.get(&(n as i32));
+            let output_event = data.get(&((n + 1) as i32));
+            if let Some(input) = input_event {
+                if let Some(output) = output_event {
+                    let input_mat = self.get_row_bits_for_features_counterpats(&[input.w_1, input.w_2, input.w_3, input.w_4, input.w_5, input.m_1, input.m_2, input.m_3, input.m_4, input.m_5], &counter);
+                    
+                    let output_mat = self.get_row_bits_for_label(&[output.w_1, output.w_2, output.w_3, output.w_4, output.w_5, output.m_1, output.m_2, output.m_3, output.m_4, output.m_5]);
+
+                    features_labels.push((input_mat, output_mat));
+                }
+            }
+        }
+
+        features_labels
+    }
+
+    pub fn get_row_bits_for_features_winners(&self, row: &[i32]) -> Matrix {
 
         let mut values: [f64; 90] = [0.; 90];
         
         for (_i,n) in row.iter().enumerate() {
             values[(n - 1) as usize] = 1.0;
+        }
+        Matrix::from_shape_vec((values.len(), 1), values.to_vec()).unwrap()
+    }
+
+    pub fn get_row_bits_for_features_counterpats(&self, row: &[i32], counter: &HashMap<i32, CounterData>) -> Matrix {
+
+        let mut values: [f64; 90] = [0.; 90];
+        
+        for (_i,n) in row.iter().enumerate() {
+            
+            if let Some(CounterData {number, counter, bonanza, stringkey, turning, melta, partner, equivalent, shadow, code }) = counter.get(&n) {
+                if *number >= 1 && *number <= 90 {}
+                if *counter >= 1 && *counter <= 90 {
+                    values[(counter - 1) as usize] = 1.0;
+                }
+                if *bonanza >= 1 && *bonanza <= 90 {
+                    values[(bonanza - 1) as usize] = 1.0;
+                }
+                if *stringkey >= 1 && *stringkey <= 90 {
+                    values[(stringkey - 1) as usize] = 1.0;
+                }
+                if *turning >= 1 && *turning <= 90 {
+                    values[(turning - 1) as usize] = 1.0;
+                }
+                if *melta >= 1 && *melta <= 90 {
+                    values[(melta - 1) as usize] = 1.0;
+                }
+                if *partner >= 1 && *partner <= 90 {
+                    values[(partner - 1) as usize] = 1.0;
+                }
+                if *equivalent >= 1 && *equivalent <= 90 {
+                    values[(equivalent - 1) as usize] = 1.0;
+                }
+                if *shadow >= 1 && *shadow <= 90 {
+                    values[(shadow - 1) as usize] = 1.0;
+                }
+                if *code >= 1 && *code <= 90 {
+                    values[(code - 1) as usize] = 1.0;
+                }
+            }
         }
         Matrix::from_shape_vec((values.len(), 1), values.to_vec()).unwrap()
     }

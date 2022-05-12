@@ -84,9 +84,9 @@ impl LottoNetwork {
     }
 
 
-    pub fn train(&mut self, network_inputs: &[Matrix], network_outputs: Vec<Vec<Matrix>>, lr: f64, batch_size: usize, epoch: i32) {
+    pub fn train(&mut self, network_inputs: &[Matrix], network_outputs: Vec<Vec<Matrix>>, lr: f64, batch_size: usize, epoch: i32, breakpoint: f64) {
         for round in 0..epoch {
-            let mut erros: Vec<f64> = vec![];
+            let mut stop = false;
             for (feature, label) in data_iter_v2(batch_size, &network_inputs, &network_outputs) {
                 
                 let _ = self.local_train(feature, &label, lr);
@@ -94,7 +94,10 @@ impl LottoNetwork {
             for (features, labels) in data_iter_v2(network_inputs.len(), &network_inputs, &network_outputs) {
                 let loss = self.local_train(features, &labels, lr);
                 println!("Epoch: {:?} => Loss: {:?}", round + 1, loss);
+                stop = breakpoint > loss;
             }
+
+            if stop { break; }
         }
     }
 
