@@ -1,7 +1,13 @@
-[workspace]
+[package]
+name = "kongodjan"
+version = "0.1.0"
+edition = "2021"
 
-members = [
-    "algo_diff",
-    "neural_network",
-    "gui"
-]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1.0.0", features = ["rc"] }
+serde_derive = "1.0.0"
+rand = { version = "0.8.5", features = ["serde1"] }
+jfs = "0.7.1"
+algo_diff = {git = "https://github.com/djedou/algo_diff", branch = "master"}
